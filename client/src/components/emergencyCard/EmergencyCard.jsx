@@ -3,12 +3,21 @@ import EmergencyQR from "./EmergencyQR";
 
 const EmergencyCard = () => {
   return (
-    <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-3xl text-white p-10 flex justify-between items-center">
+    <div
+      id="emergency-card"
+      className="relative overflow-hidden rounded-2xl bg-red-600 text-white shadow-xl p-8"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
 
-      <EmergencyInfo />
+        {/* LEFT SIDE */}
+        <EmergencyInfo />
 
-      <EmergencyQR />
+        {/* RIGHT SIDE */}
+        <div className="flex justify-center">
+          <EmergencyQR />
+        </div>
 
+      </div>
     </div>
   );
 };

@@ -18,14 +18,3 @@ html.dark body {
   background: #020617;
   color: white;
 }
-
-/* TEST */
-html.dark .theme-test {
-  background: red !important;
-  color: white !important;
-}
-
-html:not(.dark) .theme-test {
-  background: white !important;
-  color: black !important;
-}

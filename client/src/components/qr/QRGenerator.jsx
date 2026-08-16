@@ -20,7 +20,6 @@ const QRGenerator = ({ onQRReady }) => {
 
       console.log("QR API Response:", res.data);
 
-      // Backend returns emergencyUrl
       const url = res.data.emergencyUrl;
 
       if (!url) {
@@ -43,6 +42,7 @@ const QRGenerator = ({ onQRReady }) => {
         err.message ||
         "Failed to generate QR code"
       );
+
     } finally {
       setLoading(false);
     }
@@ -78,7 +78,7 @@ const QRGenerator = ({ onQRReady }) => {
   return (
     <div className="bg-white rounded-2xl shadow-md p-8">
 
-      <h2 className="text-2xl font-bold">
+      <h2 className="text-2xl font-bold text-gray-900">
         Emergency QR Code
       </h2>
 
@@ -104,11 +104,11 @@ const QRGenerator = ({ onQRReady }) => {
 
       <div className="mt-8">
 
-        <p className="text-sm font-medium text-gray-600 mb-2">
+        <p className="text-sm font-medium text-gray-700 mb-2">
           Emergency URL
         </p>
 
-        <div className="bg-gray-100 rounded-xl p-4 break-all text-sm">
+        <div className="bg-gray-100 text-gray-900 rounded-xl p-4 break-all text-sm">
           {qrUrl}
         </div>
 

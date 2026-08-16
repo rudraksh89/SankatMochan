@@ -1,73 +1,144 @@
 import {
   Droplets,
-  TriangleAlert,
+  AlertTriangle,
   HeartPulse,
-  HeartHandshake,
+  HandHeart,
   Phone,
 } from "lucide-react";
 
-import SummaryItem from "./SummaryItem";
+const HealthSummary = ({ profile, contacts }) => {
 
-const healthData = [
-  {
-    title: "Blood Group",
-    value: "O+",
-    icon: Droplets,
-    color: "text-red-500",
-  },
-  {
-    title: "Allergies",
-    value: "None",
-    icon: TriangleAlert,
-    color: "text-yellow-500",
-  },
-  {
-    title: "Medical Condition",
-    value: "Healthy",
-    icon: HeartPulse,
-    color: "text-blue-500",
-  },
-  {
-    title: "Organ Donor",
-    value: "Yes",
-    icon: HeartHandshake,
-    color: "text-pink-500",
-  },
-  {
-    title: "Emergency Contacts",
-    value: "2",
-    icon: Phone,
-    color: "text-green-500",
-  },
-];
+  const bloodGroup =
+    profile?.bloodGroup || "Not Added";
 
-const HealthSummary = () => {
+  const allergies =
+    profile?.allergies || "None";
+
+  const medicalCondition =
+    profile?.medicalConditions || "None";
+
+  const organDonor =
+    profile?.organDonor
+      ? "Yes"
+      : "No";
+
+  const emergencyContacts =
+    contacts?.length || 0;
+
+
   return (
-    <div className="bg-white rounded-3xl shadow-lg p-8">
+    <div className="bg-white rounded-3xl p-8 shadow-md">
 
-      <div className="mb-8">
+      <h2 className="text-3xl font-bold text-gray-800">
+        Health Summary
+      </h2>
 
-        <h2 className="text-2xl font-bold text-slate-800">
-          Health Summary
-        </h2>
+      <p className="text-gray-500 mt-2">
+        Quick overview of your emergency medical information.
+      </p>
 
-        <p className="text-gray-500 mt-1">
-          Quick overview of your emergency medical information.
-        </p>
+
+      <div className="grid md:grid-cols-2 gap-6 mt-8">
+
+
+        {/* Blood Group */}
+
+        <SummaryCard
+          icon={
+            <Droplets
+              size={28}
+              className="text-red-500"
+            />
+          }
+          title="Blood Group"
+          value={bloodGroup}
+        />
+
+
+        {/* Allergies */}
+
+        <SummaryCard
+          icon={
+            <AlertTriangle
+              size={28}
+              className="text-yellow-500"
+            />
+          }
+          title="Allergies"
+          value={allergies}
+        />
+
+
+        {/* Medical Condition */}
+
+        <SummaryCard
+          icon={
+            <HeartPulse
+              size={28}
+              className="text-blue-500"
+            />
+          }
+          title="Medical Condition"
+          value={medicalCondition}
+        />
+
+
+        {/* Organ Donor */}
+
+        <SummaryCard
+          icon={
+            <HandHeart
+              size={28}
+              className="text-pink-500"
+            />
+          }
+          title="Organ Donor"
+          value={organDonor}
+        />
+
+
+        {/* Emergency Contacts */}
+
+        <SummaryCard
+          icon={
+            <Phone
+              size={28}
+              className="text-green-500"
+            />
+          }
+          title="Emergency Contacts"
+          value={emergencyContacts}
+        />
 
       </div>
 
-      <div className="grid md:grid-cols-2 gap-5">
+    </div>
+  );
+};
 
-        {healthData.map((item) => (
-          <SummaryItem
-            key={item.title}
-            title={item.title}
-            value={item.value}
-            icon={item.icon}
-            color={item.color}
-          />
-        ))}
+
+const SummaryCard = ({
+  icon,
+  title,
+  value,
+}) => {
+
+  return (
+    <div className="bg-gray-50 rounded-2xl p-5 flex items-center gap-5">
+
+      <div className="bg-white rounded-xl p-4 shadow-sm">
+        {icon}
+      </div>
+
+      <div>
+
+        <p className="text-gray-500">
+          {title}
+        </p>
+
+        <p className="text-xl font-semibold text-gray-800 mt-1">
+          {value}
+        </p>
 
       </div>
 

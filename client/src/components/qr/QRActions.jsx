@@ -29,7 +29,6 @@ const QRActions = ({ qrUrl }) => {
     }
   };
 
-
   const printQR = () => {
 
     const qrElement = document.getElementById("emergency-qr");
@@ -60,6 +59,7 @@ const QRActions = ({ qrUrl }) => {
               font-family: Arial, sans-serif;
               text-align: center;
               padding: 40px;
+              color: #111827;
             }
 
             h1 {
@@ -106,7 +106,6 @@ const QRActions = ({ qrUrl }) => {
     }, 500);
   };
 
-
   const shareQR = async () => {
 
     if (!qrUrl) {
@@ -128,9 +127,7 @@ const QRActions = ({ qrUrl }) => {
 
         await navigator.clipboard.writeText(qrUrl);
 
-        alert(
-          "Emergency link copied to clipboard"
-        );
+        alert("Emergency link copied to clipboard");
       }
 
     } catch (error) {
@@ -143,17 +140,14 @@ const QRActions = ({ qrUrl }) => {
     }
   };
 
-
   return (
-    <div className="bg-white rounded-2xl shadow-md p-8">
+    <div className="bg-white text-gray-900 rounded-2xl shadow-md p-8">
 
       <h2 className="text-2xl font-bold mb-6">
         QR Actions
       </h2>
 
       <div className="grid md:grid-cols-3 gap-4">
-
-        {/* Download */}
 
         <button
           onClick={downloadQR}
@@ -162,18 +156,12 @@ const QRActions = ({ qrUrl }) => {
           Download QR
         </button>
 
-
-        {/* Print */}
-
         <button
           onClick={printQR}
           className="bg-gray-800 text-white py-3 px-5 rounded-xl hover:bg-gray-900 transition"
         >
           Print QR
         </button>
-
-
-        {/* Share */}
 
         <button
           onClick={shareQR}

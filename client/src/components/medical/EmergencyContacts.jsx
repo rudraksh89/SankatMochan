@@ -25,7 +25,6 @@ const EmergencyContacts = ({
 
   const saveEmergencyContact = async () => {
     try {
-
       if (contact._id) {
         await api.put("/emergency", contact);
       } else {
@@ -35,24 +34,36 @@ const EmergencyContacts = ({
       alert("Emergency Contact Saved");
 
     } catch (err) {
-
       alert(
         err.response?.data?.message ||
         "Failed to save contact"
       );
-
     }
   };
 
-  return (
-    <div className="bg-white rounded-2xl shadow-md p-8">
+  const inputClass = `
+    w-full
+    border border-gray-300 dark:border-slate-700
+    rounded-xl
+    p-3
+    bg-white dark:bg-slate-800
+    text-slate-900 dark:text-white
+    placeholder:text-gray-400 dark:placeholder:text-slate-500
+    outline-none
+    focus:ring-2
+    focus:ring-blue-500
+  `;
 
-      <h2 className="text-2xl font-bold mb-6">
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-md p-8">
+
+      <h2 className="text-2xl font-bold mb-6 text-slate-900 dark:text-white">
         Emergency Contacts
       </h2>
 
       <div className="grid md:grid-cols-2 gap-6">
 
+        {/* Contact Name */}
         <input
           type="text"
           placeholder="Contact Name"
@@ -60,9 +71,10 @@ const EmergencyContacts = ({
           onChange={(e) =>
             handleChange("contactName", e.target.value)
           }
-          className="border rounded-xl p-3"
+          className={inputClass}
         />
 
+        {/* Relationship */}
         <input
           type="text"
           placeholder="Relationship"
@@ -70,9 +82,10 @@ const EmergencyContacts = ({
           onChange={(e) =>
             handleChange("relationship", e.target.value)
           }
-          className="border rounded-xl p-3"
+          className={inputClass}
         />
 
+        {/* Phone */}
         <input
           type="tel"
           placeholder="Phone Number"
@@ -80,9 +93,10 @@ const EmergencyContacts = ({
           onChange={(e) =>
             handleChange("phone", e.target.value)
           }
-          className="border rounded-xl p-3"
+          className={inputClass}
         />
 
+        {/* Email */}
         <input
           type="email"
           placeholder="Email (Optional)"
@@ -90,9 +104,10 @@ const EmergencyContacts = ({
           onChange={(e) =>
             handleChange("email", e.target.value)
           }
-          className="border rounded-xl p-3"
+          className={inputClass}
         />
 
+        {/* Address */}
         <input
           type="text"
           placeholder="Address (Optional)"
@@ -100,14 +115,23 @@ const EmergencyContacts = ({
           onChange={(e) =>
             handleChange("address", e.target.value)
           }
-          className="border rounded-xl p-3 md:col-span-2"
+          className={`${inputClass} md:col-span-2`}
         />
 
       </div>
 
       <button
         onClick={saveEmergencyContact}
-        className="mt-6 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700"
+        className="
+          mt-6
+          bg-blue-600
+          hover:bg-blue-700
+          text-white
+          px-6
+          py-3
+          rounded-xl
+          transition
+        "
       >
         Save Emergency Contact
       </button>

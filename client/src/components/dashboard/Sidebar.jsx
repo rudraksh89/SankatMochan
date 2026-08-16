@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   User,
@@ -8,6 +8,8 @@ import {
   LogOut,
   ShieldPlus,
 } from "lucide-react";
+
+import { useAuth } from "../../context/AuthContext";
 
 const menuItems = [
   {
@@ -38,45 +40,43 @@ const menuItems = [
 ];
 
 const Sidebar = () => {
+  const navigate = useNavigate();
+  const { setUser } = useAuth();
+
+  const handleLogout = () => {
+    // Remove JWT
+    localStorage.removeItem("token");
+
+    // Clear logged-in user
+    setUser(null);
+
+    // Go to login
+    navigate("/login");
+  };
+
   return (
-    <aside
-      className="
-        w-72 min-h-screen
-        bg-white dark:bg-slate-900
-        text-slate-900 dark:text-white
-        border-r border-slate-200 dark:border-slate-700
-        flex flex-col
-      "
-    >
+    <aside className="w-72 min-h-screen bg-slate-900 text-white flex flex-col">
 
       {/* Logo */}
-      <div
-        className="
-          flex items-center gap-3
-          px-6 py-8
-          border-b border-slate-200 dark:border-slate-700
-        "
-      >
 
-        <ShieldPlus
-          className="text-blue-600 dark:text-blue-500"
-          size={36}
-        />
+      <div className="flex items-center gap-3 px-6 py-8 border-b border-slate-700">
+
+        <ShieldPlus className="text-blue-500" size={36} />
 
         <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-xl font-bold">
             Sankat Mochan
           </h1>
 
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-slate-400">
             Emergency Platform
           </p>
         </div>
 
       </div>
 
-
       {/* Navigation */}
+
       <nav className="flex-1 mt-6">
 
         {menuItems.map((item) => {
@@ -88,23 +88,14 @@ const Sidebar = () => {
               key={item.title}
               to={item.path}
               className={({ isActive }) =>
-                `
-                flex items-center gap-4
-                px-6 py-4
-                transition-all duration-200
+                `flex items-center gap-4 px-6 py-4 transition-all duration-200
                 ${
                   isActive
                     ? "bg-blue-600 text-white"
-                    : `
-                      text-slate-600 dark:text-slate-300
-                      hover:bg-slate-100 dark:hover:bg-slate-800
-                      hover:text-slate-900 dark:hover:text-white
-                    `
-                }
-                `
+                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                }`
               }
             >
-
               <Icon size={22} />
 
               <span className="font-medium">
@@ -118,31 +109,17 @@ const Sidebar = () => {
 
       </nav>
 
-
       {/* Logout */}
-      <div
-        className="
-          border-t border-slate-200 dark:border-slate-700
-          p-5
-        "
-      >
+
+      <div className="border-t border-slate-700 p-5">
 
         <button
-          className="
-            flex items-center gap-4
-            w-full rounded-lg
-            px-4 py-3
-            text-slate-600 dark:text-slate-300
-            hover:bg-red-600
-            hover:text-white
-            transition
-          "
+          onClick={handleLogout}
+          className="flex items-center gap-4 w-full rounded-lg px-4 py-3 hover:bg-red-600 transition"
         >
-
           <LogOut size={22} />
 
           Logout
-
         </button>
 
       </div>

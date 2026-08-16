@@ -1,132 +1,187 @@
-import {
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-} from "lucide-react";
+import { CheckCircle, AlertCircle } from "lucide-react";
 
-const profile = {
-  bloodGroup: true,
-  emergencyContact: true,
-  medicalInfo: true,
-  qrGenerated: true,
-  lastUpdated: "Today",
-};
+const EmergencyStatus = ({ profile, contacts }) => {
 
-const EmergencyStatus = () => {
-  const isReady =
-    profile.bloodGroup &&
-    profile.emergencyContact &&
-    profile.medicalInfo &&
-    profile.qrGenerated;
+  const bloodGroupAdded =
+    !!profile?.bloodGroup;
 
-  const checklist = [
-    {
-      label: "Blood Group Added",
-      status: profile.bloodGroup,
-    },
-    {
-      label: "Emergency Contact Added",
-      status: profile.emergencyContact,
-    },
-    {
-      label: "Medical Information Added",
-      status: profile.medicalInfo,
-    },
-    {
-      label: "QR Generated",
-      status: profile.qrGenerated,
-    },
-  ];
+  const medicalInfoAdded =
+    !!(
+      profile?.medicalConditions ||
+      profile?.allergies ||
+      profile?.medications
+    );
+
+  const emergencyContactAdded =
+    contacts?.length > 0;
+
+  const completedItems = [
+    bloodGroupAdded,
+    medicalInfoAdded,
+    emergencyContactAdded,
+  ].filter(Boolean).length;
+
+  const totalItems = 3;
+
+  const isComplete =
+    completedItems === totalItems;
 
   return (
-    <div className="bg-white rounded-3xl shadow-lg p-8">
+    <div className="bg-white rounded-3xl p-8 shadow-md">
 
       {/* Header */}
 
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-5">
 
-        {isReady ? (
-          <CheckCircle2
-            size={42}
-            className="text-green-500"
-          />
+        {isComplete ? (
+          <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+            <CheckCircle
+              size={32}
+              className="text-green-600"
+            />
+          </div>
         ) : (
-          <AlertTriangle
-            size={42}
-            className="text-yellow-500"
-          />
+          <div className="w-14 h-14 rounded-full bg-yellow-100 flex items-center justify-center">
+            <AlertCircle
+              size={32}
+              className="text-yellow-600"
+            />
+          </div>
         )}
 
         <div>
 
-          <h2 className="text-2xl font-bold text-slate-800">
-            {isReady
+          <h2 className="text-2xl font-bold text-gray-800">
+
+            {isComplete
               ? "Emergency Ready"
-              : "Attention Required"}
+              : "Profile Incomplete"}
+
           </h2>
 
-          <p className="text-gray-500">
-            {isReady
+          <p className="text-gray-500 mt-1">
+
+            {isComplete
               ? "Your emergency profile is complete."
-              : "Complete your profile for better emergency response."}
+              : "Complete your emergency information for better assistance."}
+
           </p>
 
         </div>
 
       </div>
 
-      {/* Checklist */}
 
-      <div className="space-y-4">
+      {/* Progress */}
 
-        {checklist.map((item) => (
+      <div className="mt-8">
 
-          <div
-            key={item.label}
-            className="flex items-center justify-between p-4 rounded-xl bg-slate-50"
-          >
+        <div className="flex justify-between mb-2">
 
-            <span className="font-medium">
-              {item.label}
-            </span>
+          <span className="text-sm text-gray-500">
+            Profile Completion
+          </span>
 
-            {item.status ? (
-              <CheckCircle2
-                size={22}
-                className="text-green-500"
-              />
-            ) : (
-              <AlertTriangle
-                size={22}
-                className="text-yellow-500"
-              />
-            )}
-
-          </div>
-
-        ))}
-
-      </div>
-
-      {/* Footer */}
-
-      <div className="flex items-center justify-between mt-8 border-t pt-5">
-
-        <div className="flex items-center gap-2 text-gray-500">
-
-          <Clock size={18} />
-
-          <span>
-            Last Updated: {profile.lastUpdated}
+          <span className="text-sm font-semibold">
+            {completedItems}/{totalItems}
           </span>
 
         </div>
 
-        <button className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
+        <div className="w-full bg-gray-200 rounded-full h-3">
+
+          <div
+            className="bg-blue-600 h-3 rounded-full transition-all"
+            style={{
+              width: `${(completedItems / totalItems) * 100}%`,
+            }}
+          />
+
+        </div>
+
+      </div>
+
+
+      {/* Status Items */}
+
+      <div className="mt-8 space-y-4">
+
+        <StatusItem
+          title="Blood Group Added"
+          completed={bloodGroupAdded}
+        />
+
+        <StatusItem
+          title="Medical Information Added"
+          completed={medicalInfoAdded}
+        />
+
+        <StatusItem
+          title="Emergency Contact Added"
+          completed={emergencyContactAdded}
+        />
+
+      </div>
+
+
+      {/* Last updated */}
+
+      <div className="mt-8 flex justify-between items-center">
+
+        <p className="text-gray-500 text-sm">
+          Last Updated: Today
+        </p>
+
+        <button
+          onClick={() =>
+            window.location.href = "/dashboard/medical-profile"
+          }
+          className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition"
+        >
           Edit Profile
         </button>
 
       </div>
+
+    </div>
+  );
+};
+
+
+const StatusItem = ({ title, completed }) => {
+
+  return (
+    <div className="flex items-center justify-between bg-gray-50 rounded-xl p-4">
+
+      <div className="flex items-center gap-3">
+
+        {completed ? (
+          <CheckCircle
+            size={22}
+            className="text-green-500"
+          />
+        ) : (
+          <AlertCircle
+            size={22}
+            className="text-yellow-500"
+          />
+        )}
+
+        <span className="font-medium text-gray-700">
+          {title}
+        </span>
+
+      </div>
+
+      <span
+        className={
+          completed
+            ? "text-green-600 font-medium"
+            : "text-yellow-600 font-medium"
+        }
+      >
+        {completed ? "Added" : "Missing"}
+      </span>
 
     </div>
   );

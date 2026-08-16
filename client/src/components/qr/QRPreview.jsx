@@ -1,6 +1,6 @@
 const QRPreview = () => {
   return (
-    <div className="bg-white rounded-2xl shadow-md p-8">
+    <div className="bg-white text-gray-900 rounded-2xl shadow-md p-8">
 
       <h2 className="text-2xl font-bold mb-4">
         Emergency QR
@@ -12,6 +12,7 @@ const QRPreview = () => {
         your emergency medical information.
       </p>
 
+      {/* QR Information */}
       <div className="mt-6 p-5 rounded-xl bg-blue-50 border border-blue-200">
 
         <h3 className="font-semibold text-blue-700">
@@ -29,6 +30,7 @@ const QRPreview = () => {
 
       </div>
 
+      {/* How it works */}
       <div className="mt-6 p-5 rounded-xl bg-green-50 border border-green-200">
 
         <h3 className="font-semibold text-green-700">

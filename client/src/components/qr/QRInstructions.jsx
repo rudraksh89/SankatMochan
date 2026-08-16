@@ -1,6 +1,6 @@
 const QRInstructions = () => {
   return (
-    <div className="bg-white rounded-2xl shadow-md p-8">
+    <div className="bg-white text-gray-900 rounded-2xl shadow-md p-8">
 
       <h2 className="text-2xl font-bold mb-6">
         Instructions
@@ -14,7 +14,9 @@ const QRInstructions = () => {
 
         <li>You can also print it on an ID card or sticker.</li>
 
-        <li>Anyone scanning it will only see your emergency medical information.</li>
+        <li>
+          Anyone scanning it will only see your emergency medical information.
+        </li>
 
         <li>Your personal account remains secure.</li>
 

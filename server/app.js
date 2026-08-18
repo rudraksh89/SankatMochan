@@ -8,6 +8,7 @@ import insuranceRoutes from "./routes/insuranceRoutes.js";
 import documentRoutes from "./routes/documentRoutes.js";
 import qrRoutes from "./routes/qrRoutes.js";
 import publicRoutes from "./routes/publicRoutes.js";
+import verificationRoutes from "./routes/verificationRoutes.js";
 
 
 
@@ -35,6 +36,7 @@ app.use("/api/insurance", insuranceRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/qr", qrRoutes);
 app.use("/api/public", publicRoutes);
+app.use("/api/verification", verificationRoutes);
 
 app.get("/", (req, res) => {
   res.json({

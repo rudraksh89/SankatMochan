@@ -27,10 +27,28 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
-    role: {
+    accountType: {
       type: String,
-      enum: ["citizen", "hospital", "admin"],
-      default: "citizen",
+      enum: ["normal", "responder"],
+      default: "normal",
+    },
+
+    profession: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    organization: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    professionalId: {
+      type: String,
+      default: "",
+      trim: true,
     },
 
     isVerified: {
@@ -38,14 +56,33 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
+    verificationStatus: {
+      type: String,
+      enum: [
+        "not_required",
+        "not_submitted",
+        "pending",
+        "approved",
+        "rejected",
+      ],
+      default: "not_required",
+    },
+
     profileCompleted: {
       type: Boolean,
       default: false,
     },
+
     city: {
-  type: String,
-  default: "",
-},
+      type: String,
+      default: "",
+    },
+
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
   },
   {
     timestamps: true,

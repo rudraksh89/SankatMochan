@@ -7,6 +7,7 @@ import {
   Settings,
   LogOut,
   ShieldPlus,
+  BadgeCheck,
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
@@ -41,16 +42,13 @@ const menuItems = [
 
 const Sidebar = () => {
   const navigate = useNavigate();
-  const { setUser } = useAuth();
+
+  // Get both user and setUser
+  const { user, setUser } = useAuth();
 
   const handleLogout = () => {
-    // Remove JWT
     localStorage.removeItem("token");
-
-    // Clear logged-in user
     setUser(null);
-
-    // Go to login
     navigate("/login");
   };
 
@@ -75,6 +73,7 @@ const Sidebar = () => {
 
       </div>
 
+
       {/* Navigation */}
 
       <nav className="flex-1 mt-6">
@@ -96,6 +95,7 @@ const Sidebar = () => {
                 }`
               }
             >
+
               <Icon size={22} />
 
               <span className="font-medium">
@@ -107,7 +107,37 @@ const Sidebar = () => {
 
         })}
 
+
+        {/* =============================== */}
+        {/* VERIFIED RESPONDER ONLY */}
+        {/* =============================== */}
+
+        {user?.accountType === "responder" && (
+
+          <NavLink
+            to="/dashboard/verification"
+            className={({ isActive }) =>
+              `flex items-center gap-4 px-6 py-4 transition-all duration-200
+              ${
+                isActive
+                  ? "bg-blue-600 text-white"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`
+            }
+          >
+
+            <BadgeCheck size={22} />
+
+            <span className="font-medium">
+              Verification
+            </span>
+
+          </NavLink>
+
+        )}
+
       </nav>
+
 
       {/* Logout */}
 
@@ -117,9 +147,11 @@ const Sidebar = () => {
           onClick={handleLogout}
           className="flex items-center gap-4 w-full rounded-lg px-4 py-3 hover:bg-red-600 transition"
         >
+
           <LogOut size={22} />
 
           Logout
+
         </button>
 
       </div>

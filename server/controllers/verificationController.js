@@ -1,108 +1,11 @@
-import VerificationDocument from "../models/VerificationDocument.js";
 import User from "../models/User.js";
+import MedicalDocument from "../models/MedicalDocument.js";
+import streamifier from "streamifier";
+import cloudinary from "../config/cloudinary.js";
 
-
-// ========================================
-// Upload Verification Document
-// ========================================
-
-export const uploadVerificationDocument = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    if (user.accountType !== "responder") {
-      return res.status(403).json({
-        success: false,
-        message: "Only responders can submit verification documents",
-      });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({
-        success: false,
-        message: "Your account is already verified",
-      });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "Verification document is required",
-      });
-    }
-
-    const existingDocument = await VerificationDocument.findOne({
-      user: user._id,
-      status: "pending",
-    });
-
-    if (existingDocument) {
-      return res.status(400).json({
-        success: false,
-        message: "You already have a verification request pending",
-      });
-    }
-
-    const {
-      documentType,
-    } = req.body;
-
-    if (!documentType) {
-      return res.status(400).json({
-        success: false,
-        message: "Document type is required",
-      });
-    }
-
-    /*
-      req.file.path should contain the uploaded
-      Cloudinary URL if you are using multer-storage-cloudinary.
-
-      If your existing upload middleware uses a different
-      property, change this line accordingly.
-    */
-
-    const fileUrl = req.file.path;
-
-    const document = await VerificationDocument.create({
-      user: user._id,
-      documentType,
-      fileUrl,
-      fileName: req.file.originalname,
-      status: "pending",
-    });
-
-    user.verificationStatus = "pending";
-
-    await user.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Verification document submitted successfully",
-      document,
-    });
-
-  } catch (error) {
-    console.error("Verification upload error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-
-// ========================================
-// Get My Verification Status
-// ========================================
+// =====================================================
+// GET MY VERIFICATION STATUS
+// =====================================================
 
 export const getMyVerification = async (req, res) => {
   try {
@@ -117,26 +20,36 @@ export const getMyVerification = async (req, res) => {
       });
     }
 
-    const document = await VerificationDocument.findOne({
-      user: user._id,
+    const documents = await MedicalDocument.find({
+      user: req.user._id,
     }).sort({
       createdAt: -1,
     });
 
     res.status(200).json({
       success: true,
+
       user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone,
+
         accountType: user.accountType,
+
         profession: user.profession,
         organization: user.organization,
         professionalId: user.professionalId,
+
         isVerified: user.isVerified,
         verificationStatus: user.verificationStatus,
       },
-      document,
-    });
 
+      documents,
+    });
   } catch (error) {
+    console.error(error);
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -144,14 +57,139 @@ export const getMyVerification = async (req, res) => {
   }
 };
 
+// =====================================================
+// UPLOAD VERIFICATION DOCUMENT
+// =====================================================
 
-// ========================================
-// Admin: Get Pending Verifications
-// ========================================
-
-export const getPendingVerifications = async (req, res) => {
+export const uploadVerificationDocument = async (
+  req,
+  res
+) => {
   try {
-    const documents = await VerificationDocument.find({
+    console.log("=================================");
+    console.log("VERIFICATION UPLOAD HIT");
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
+    console.log("USER:", req.user?._id);
+    console.log("=================================");
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file uploaded",
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Only responders can upload verification documents
+    if (user.accountType !== "responder") {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Only responder accounts can submit verification documents",
+      });
+    }
+
+    // Already verified
+    if (user.verificationStatus === "approved") {
+      return res.status(400).json({
+        success: false,
+        message: "Your account is already verified",
+      });
+    }
+
+    // ==============================
+    // CLOUDINARY UPLOAD
+    // ==============================
+
+    const streamUpload = () =>
+      new Promise((resolve, reject) => {
+        const stream =
+          cloudinary.uploader.upload_stream(
+            {
+              folder: "SankatMochan/Documents",
+              resource_type: "auto",
+            },
+            (error, result) => {
+              if (result) {
+                resolve(result);
+              } else {
+                reject(error);
+              }
+            }
+          );
+
+        streamifier
+          .createReadStream(req.file.buffer)
+          .pipe(stream);
+      });
+
+    const result = await streamUpload();
+
+    // ==============================
+    // SAVE DOCUMENT
+    // ==============================
+
+    const document = await MedicalDocument.create({
+      user: req.user._id,
+
+      documentType: req.body.documentType,
+
+      fileName: req.file.originalname,
+
+      fileUrl: result.secure_url,
+
+      publicId: result.public_id,
+
+      resourceType: result.resource_type,
+
+      status: "pending",
+    });
+
+    // ==============================
+    // UPDATE USER
+    // ==============================
+
+    user.verificationStatus = "pending";
+    user.isVerified = false;
+
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+
+      message:
+        "Document submitted successfully. Waiting for admin verification.",
+
+      document,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// =====================================================
+// ADMIN - GET PENDING VERIFICATIONS
+// =====================================================
+
+export const getPendingVerifications = async (
+  req,
+  res
+) => {
+  try {
+    const documents = await MedicalDocument.find({
       status: "pending",
     })
       .populate(
@@ -166,8 +204,9 @@ export const getPendingVerifications = async (req, res) => {
       success: true,
       documents,
     });
-
   } catch (error) {
+    console.error(error);
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -175,40 +214,66 @@ export const getPendingVerifications = async (req, res) => {
   }
 };
 
+// =====================================================
+// ADMIN - REVIEW DOCUMENT
+// =====================================================
 
-// ========================================
-// Admin: Approve
-// ========================================
-
-export const approveVerification = async (req, res) => {
+export const reviewVerification = async (
+  req,
+  res
+) => {
   try {
     const { id } = req.params;
-    const { remark } = req.body;
 
-    const document = await VerificationDocument.findById(id);
+    const {
+      action,
+      rejectionReason,
+    } = req.body;
+
+    // ==============================
+    // VALIDATE ACTION
+    // ==============================
+
+    if (!["approve", "reject"].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid review action",
+      });
+    }
+
+    // ==============================
+    // FIND DOCUMENT
+    // ==============================
+
+    const document =
+      await MedicalDocument.findById(id);
 
     if (!document) {
       return res.status(404).json({
         success: false,
-        message: "Verification document not found",
+        message: "Document not found",
       });
     }
+
+    // ==============================
+    // CHECK STATUS
+    // ==============================
 
     if (document.status !== "pending") {
       return res.status(400).json({
         success: false,
-        message: "This document has already been reviewed",
+        message:
+          "This document has already been reviewed",
       });
     }
 
-    document.status = "approved";
-    document.adminRemark = remark || "";
-    document.reviewedBy = req.user._id;
-    document.reviewedAt = new Date();
+    // ==============================
+    // FIND USER
+    // ==============================
 
-    await document.save();
-
-    const user = await User.findById(document.user);
+    const user = await User.findById(
+      document.user
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -217,72 +282,67 @@ export const approveVerification = async (req, res) => {
       });
     }
 
-    user.isVerified = true;
-    user.verificationStatus = "approved";
+    // =================================================
+    // APPROVE
+    // =================================================
 
-    await user.save();
+    if (action === "approve") {
+      document.status = "approved";
 
-    res.status(200).json({
-      success: true,
-      message: "Responder verified successfully",
-    });
+      document.reviewedBy = req.user._id;
 
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+      document.reviewedAt = new Date();
 
+      document.rejectionReason = "";
 
-// ========================================
-// Admin: Reject
-// ========================================
+      await document.save();
 
-export const rejectVerification = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { remark } = req.body;
+      // Make responder verified
+      user.isVerified = true;
 
-    const document = await VerificationDocument.findById(id);
+      user.verificationStatus = "approved";
 
-    if (!document) {
-      return res.status(404).json({
-        success: false,
-        message: "Verification document not found",
+      await user.save();
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Responder verification approved",
       });
     }
 
-    if (document.status !== "pending") {
-      return res.status(400).json({
-        success: false,
-        message: "This document has already been reviewed",
-      });
-    }
+    // =================================================
+    // REJECT
+    // =================================================
 
-    document.status = "rejected";
-    document.adminRemark = remark || "";
-    document.reviewedBy = req.user._id;
-    document.reviewedAt = new Date();
+    if (action === "reject") {
+      document.status = "rejected";
 
-    await document.save();
+      document.reviewedBy = req.user._id;
 
-    const user = await User.findById(document.user);
+      document.reviewedAt = new Date();
 
-    if (user) {
+      document.rejectionReason =
+        rejectionReason ||
+        "Document rejected";
+
+      await document.save();
+
       user.isVerified = false;
+
       user.verificationStatus = "rejected";
 
       await user.save();
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Responder verification rejected",
+      });
     }
-
-    res.status(200).json({
-      success: true,
-      message: "Verification request rejected",
-    });
-
   } catch (error) {
+    console.error(error);
+
     res.status(500).json({
       success: false,
       message: error.message,

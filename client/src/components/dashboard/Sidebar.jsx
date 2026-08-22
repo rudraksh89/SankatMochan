@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
+
 import {
   LayoutDashboard,
   User,
@@ -8,6 +9,7 @@ import {
   LogOut,
   ShieldPlus,
   BadgeCheck,
+  ShieldCheck,
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
@@ -43,25 +45,30 @@ const menuItems = [
 const Sidebar = () => {
   const navigate = useNavigate();
 
-  // Get both user and setUser
   const { user, setUser } = useAuth();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+
     setUser(null);
+
     navigate("/login");
   };
 
   return (
     <aside className="w-72 min-h-screen bg-slate-900 text-white flex flex-col">
 
-      {/* Logo */}
+      {/* LOGO */}
 
       <div className="flex items-center gap-3 px-6 py-8 border-b border-slate-700">
 
-        <ShieldPlus className="text-blue-500" size={36} />
+        <ShieldPlus
+          className="text-blue-500"
+          size={36}
+        />
 
         <div>
+
           <h1 className="text-xl font-bold">
             Sankat Mochan
           </h1>
@@ -69,12 +76,12 @@ const Sidebar = () => {
           <p className="text-xs text-slate-400">
             Emergency Platform
           </p>
+
         </div>
 
       </div>
 
-
-      {/* Navigation */}
+      {/* NAVIGATION */}
 
       <nav className="flex-1 mt-6">
 
@@ -87,8 +94,7 @@ const Sidebar = () => {
               key={item.title}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-4 px-6 py-4 transition-all duration-200
-                ${
+                `flex items-center gap-4 px-6 py-4 transition-all duration-200 ${
                   isActive
                     ? "bg-blue-600 text-white"
                     : "text-slate-300 hover:bg-slate-800 hover:text-white"
@@ -107,18 +113,13 @@ const Sidebar = () => {
 
         })}
 
-
-        {/* =============================== */}
-        {/* VERIFIED RESPONDER ONLY */}
-        {/* =============================== */}
+        {/* RESPONDER VERIFICATION */}
 
         {user?.accountType === "responder" && (
-
           <NavLink
             to="/dashboard/verification"
             className={({ isActive }) =>
-              `flex items-center gap-4 px-6 py-4 transition-all duration-200
-              ${
+              `flex items-center gap-4 px-6 py-4 transition-all duration-200 ${
                 isActive
                   ? "bg-blue-600 text-white"
                   : "text-slate-300 hover:bg-slate-800 hover:text-white"
@@ -133,13 +134,34 @@ const Sidebar = () => {
             </span>
 
           </NavLink>
+        )}
 
+        {/* ADMIN VERIFICATION */}
+
+        {user?.role === "admin" && (
+          <NavLink
+            to="/dashboard/admin/verifications"
+            className={({ isActive }) =>
+              `flex items-center gap-4 px-6 py-4 transition-all duration-200 ${
+                isActive
+                  ? "bg-purple-600 text-white"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`
+            }
+          >
+
+            <ShieldCheck size={22} />
+
+            <span className="font-medium">
+              Admin Verification
+            </span>
+
+          </NavLink>
         )}
 
       </nav>
 
-
-      {/* Logout */}
+      {/* LOGOUT */}
 
       <div className="border-t border-slate-700 p-5">
 

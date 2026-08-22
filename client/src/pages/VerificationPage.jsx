@@ -4,27 +4,48 @@ import api from "../api/axios";
 const VerificationPage = () => {
   const [status, setStatus] = useState(null);
 
-  const [documentType, setDocumentType] = useState(
-    "professional_id"
-  );
+  const [documentType, setDocumentType] =
+    useState("professional_id");
 
   const [file, setFile] = useState(null);
 
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  // ==========================================
+  // FETCH STATUS
+  // ==========================================
 
   const fetchStatus = async () => {
     try {
-      const response = await api.get("/verification/me");
+      setLoading(true);
+
+      const response =
+        await api.get("/verification/me");
 
       setStatus(response.data);
     } catch (error) {
       console.error(error);
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to load verification status"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchStatus();
   }, []);
+
+  // ==========================================
+  // UPLOAD
+  // ==========================================
 
   const uploadDocument = async () => {
     if (!file) {
@@ -37,143 +58,208 @@ const VerificationPage = () => {
 
       const formData = new FormData();
 
-      formData.append("document", file);
+      formData.append(
+        "document",
+        file
+      );
+
       formData.append(
         "documentType",
         documentType
       );
 
-      const response = await api.post(
-        "/verification/upload",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const response =
+        await api.post(
+          "/verification/upload",
+          formData
+        );
 
       alert(response.data.message);
 
       setFile(null);
 
-      fetchStatus();
+      // Reset file input
+      const fileInput =
+        document.getElementById(
+          "verification-document"
+        );
 
+      if (fileInput) {
+        fileInput.value = "";
+      }
+
+      fetchStatus();
     } catch (error) {
       console.error(error);
 
       alert(
         error.response?.data?.message ||
-        "Upload failed"
+          "Upload failed"
       );
-
     } finally {
       setUploading(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-md p-8">
+        <p className="text-gray-500">
+          Loading verification information...
+        </p>
+      </div>
+    );
+  }
+
   const verificationStatus =
     status?.user?.verificationStatus;
 
+  const documents =
+    status?.documents || [];
+
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-5xl mx-auto space-y-6">
+
+      {/* =====================================
+          HEADER
+      ====================================== */}
 
       <div className="bg-white rounded-2xl shadow-md p-8">
 
-        <h1 className="text-3xl font-bold">
+        <h1 className="text-3xl font-bold text-gray-900">
           Responder Verification
         </h1>
 
         <p className="text-gray-500 mt-2">
-          Submit your professional document to become
-          a verified emergency responder.
+          Submit your professional credentials
+          to become a verified emergency responder.
         </p>
 
+      </div>
 
-        {/* Status */}
+      {/* =====================================
+          STATUS
+      ====================================== */}
 
-        <div className="mt-8">
+      <div className="bg-white rounded-2xl shadow-md p-8">
 
-          {verificationStatus ===
-            "not_submitted" && (
-            <div className="p-4 rounded-xl bg-yellow-50 border border-yellow-200">
+        <h2 className="text-xl font-semibold text-gray-900">
+          Verification Status
+        </h2>
 
-              <p className="font-semibold text-yellow-800">
-                Verification not submitted
-              </p>
+        {/* NOT SUBMITTED */}
 
-              <p className="text-sm text-yellow-700 mt-1">
-                Upload your professional document
-                to start verification.
-              </p>
+        {verificationStatus ===
+          "not_submitted" && (
+          <div className="mt-5 p-5 rounded-xl bg-yellow-50 border border-yellow-200">
 
-            </div>
-          )}
+            <p className="font-semibold text-yellow-800">
+              Verification Not Submitted
+            </p>
 
+            <p className="text-sm text-yellow-700 mt-1">
+              Upload your professional document
+              to start verification.
+            </p>
 
-          {verificationStatus === "pending" && (
-            <div className="p-4 rounded-xl bg-blue-50 border border-blue-200">
+          </div>
+        )}
 
-              <p className="font-semibold text-blue-800">
-                Verification Pending
-              </p>
+        {/* NOT REQUIRED */}
 
-              <p className="text-sm text-blue-700 mt-1">
-                Your document is currently being
-                reviewed by an administrator.
-              </p>
+        {verificationStatus ===
+          "not_required" && (
+          <div className="mt-5 p-5 rounded-xl bg-gray-50 border">
 
-            </div>
-          )}
+            <p className="font-semibold text-gray-800">
+              Verification Not Required
+            </p>
 
+            <p className="text-sm text-gray-600 mt-1">
+              Your account is registered as a
+              normal user.
+            </p>
 
-          {verificationStatus === "approved" && (
-            <div className="p-4 rounded-xl bg-green-50 border border-green-200">
+          </div>
+        )}
 
-              <p className="font-semibold text-green-800">
-                ✓ Verified Responder
-              </p>
+        {/* PENDING */}
 
-              <p className="text-sm text-green-700 mt-1">
-                Your professional credentials have
-                been verified.
-              </p>
+        {verificationStatus ===
+          "pending" && (
+          <div className="mt-5 p-5 rounded-xl bg-blue-50 border border-blue-200">
 
-            </div>
-          )}
+            <p className="font-semibold text-blue-800">
+              Verification Pending
+            </p>
 
+            <p className="text-sm text-blue-700 mt-1">
+              Your document is currently being
+              reviewed by an administrator.
+            </p>
 
-          {verificationStatus === "rejected" && (
-            <div className="p-4 rounded-xl bg-red-50 border border-red-200">
+          </div>
+        )}
 
-              <p className="font-semibold text-red-800">
-                Verification Rejected
-              </p>
+        {/* APPROVED */}
 
-              <p className="text-sm text-red-700 mt-1">
-                Please submit a valid professional
-                document.
-              </p>
+        {verificationStatus ===
+          "approved" && (
+          <div className="mt-5 p-5 rounded-xl bg-green-50 border border-green-200">
 
-            </div>
-          )}
+            <p className="font-semibold text-green-800 text-lg">
+              ✓ Verified Responder
+            </p>
 
-        </div>
+            <p className="text-sm text-green-700 mt-1">
+              Your professional credentials
+              have been verified.
+            </p>
 
+          </div>
+        )}
 
-        {/* Upload */}
+        {/* REJECTED */}
 
-        {verificationStatus !== "approved" &&
-          verificationStatus !== "pending" && (
+        {verificationStatus ===
+          "rejected" && (
+          <div className="mt-5 p-5 rounded-xl bg-red-50 border border-red-200">
 
-          <div className="mt-8">
+            <p className="font-semibold text-red-800">
+              Verification Rejected
+            </p>
 
-            <h2 className="text-xl font-semibold">
+            <p className="text-sm text-red-700 mt-1">
+              Your document was rejected.
+              Please upload a valid document.
+            </p>
+
+          </div>
+        )}
+
+      </div>
+
+      {/* =====================================
+          UPLOAD
+      ====================================== */}
+
+      {verificationStatus !== "approved" &&
+        verificationStatus !== "pending" &&
+        verificationStatus !== "not_required" && (
+          <div className="bg-white rounded-2xl shadow-md p-8">
+
+            <h2 className="text-xl font-semibold text-gray-900">
               Upload Verification Document
             </h2>
 
+            <p className="text-gray-500 mt-2">
+              Upload a valid document proving
+              your professional identity.
+            </p>
 
-            <div className="mt-5">
+            {/* DOCUMENT TYPE */}
+
+            <div className="mt-6">
 
               <label className="block font-medium mb-2">
                 Document Type
@@ -182,9 +268,11 @@ const VerificationPage = () => {
               <select
                 value={documentType}
                 onChange={(e) =>
-                  setDocumentType(e.target.value)
+                  setDocumentType(
+                    e.target.value
+                  )
                 }
-                className="w-full border rounded-xl p-3"
+                className="w-full border border-gray-300 rounded-xl p-3"
               >
 
                 <option value="professional_id">
@@ -211,29 +299,39 @@ const VerificationPage = () => {
 
             </div>
 
+            {/* FILE */}
 
-            <div className="mt-5">
+            <div className="mt-6">
 
               <label className="block font-medium mb-2">
                 Document
               </label>
 
               <input
+                id="verification-document"
                 type="file"
                 accept=".jpg,.jpeg,.png,.pdf"
                 onChange={(e) =>
-                  setFile(e.target.files[0])
+                  setFile(
+                    e.target.files[0]
+                  )
                 }
-                className="w-full border rounded-xl p-3"
+                className="w-full border border-gray-300 rounded-xl p-3"
               />
+
+              <p className="text-xs text-gray-500 mt-2">
+                JPG, PNG or PDF. Maximum size:
+                10 MB.
+              </p>
 
             </div>
 
+            {/* BUTTON */}
 
             <button
               onClick={uploadDocument}
               disabled={uploading}
-              className="mt-6 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50"
+              className="mt-6 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
             >
               {uploading
                 ? "Uploading..."
@@ -241,10 +339,84 @@ const VerificationPage = () => {
             </button>
 
           </div>
-
         )}
 
-      </div>
+      {/* =====================================
+          DOCUMENT HISTORY
+      ====================================== */}
+
+      {documents.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-md p-8">
+
+          <h2 className="text-xl font-semibold text-gray-900">
+            Submitted Documents
+          </h2>
+
+          <div className="mt-5 space-y-4">
+
+            {documents.map((document) => (
+              <div
+                key={document._id}
+                className="border rounded-xl p-5"
+              >
+
+                <div className="flex flex-col md:flex-row md:justify-between gap-4">
+
+                  <div>
+
+                    <p className="font-semibold">
+                      {document.documentType}
+                    </p>
+
+                    <p className="text-sm text-gray-500 mt-1">
+                      {document.fileName}
+                    </p>
+
+                  </div>
+
+                  <div>
+
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        document.status ===
+                        "approved"
+                          ? "bg-green-100 text-green-700"
+                          : document.status ===
+                            "rejected"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-blue-100 text-blue-700"
+                      }`}
+                    >
+                      {document.status}
+                    </span>
+
+                  </div>
+
+                </div>
+
+                <a
+                  href={document.fileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block mt-4 text-blue-600 hover:underline"
+                >
+                  View Document
+                </a>
+
+                {document.rejectionReason && (
+                  <p className="mt-3 text-sm text-red-600">
+                    Reason:{" "}
+                    {document.rejectionReason}
+                  </p>
+                )}
+
+              </div>
+            ))}
+
+          </div>
+
+        </div>
+      )}
 
     </div>
   );

@@ -3,20 +3,29 @@ import express from "express";
 import protect from "../middleware/authMiddleware.js";
 import adminOnly from "../middleware/adminMiddleware.js";
 
-import {
-  uploadVerificationDocument,
-  getMyVerification,
-  getPendingVerifications,
-  approveVerification,
-  rejectVerification,
-} from "../controllers/verificationController.js";
-
 import upload from "../middleware/uploadMiddleware.js";
+
+import {
+  getMyVerification,
+  uploadVerificationDocument,
+  getPendingVerifications,
+  reviewVerification,
+} from "../controllers/verificationController.js";
 
 const router = express.Router();
 
+// =====================================================
+// RESPONDER ROUTES
+// =====================================================
 
-// Responder
+// Get own verification status
+router.get(
+  "/me",
+  protect,
+  getMyVerification
+);
+
+// Upload verification document
 router.post(
   "/upload",
   protect,
@@ -24,40 +33,24 @@ router.post(
   uploadVerificationDocument
 );
 
+// =====================================================
+// ADMIN ROUTES
+// =====================================================
 
-// Responder
+// Get pending verification requests
 router.get(
-  "/me",
-  protect,
-  getMyVerification
-);
-
-
-// Admin
-router.get(
-  "/pending",
+  "/admin/pending",
   protect,
   adminOnly,
   getPendingVerifications
 );
 
-
-// Admin
+// Approve / reject
 router.put(
-  "/:id/approve",
+  "/admin/review/:id",
   protect,
   adminOnly,
-  approveVerification
+  reviewVerification
 );
-
-
-// Admin
-router.put(
-  "/:id/reject",
-  protect,
-  adminOnly,
-  rejectVerification
-);
-
 
 export default router;

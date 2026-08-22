@@ -10,7 +10,8 @@ import SettingsPage from "../pages/SettingsPage";
 import Register from "../pages/Register";
 import EmergencyPage from "../pages/EmergencyPage";
 import VerificationPage from "../pages/VerificationPage";
-import AdminVerification from "../pages/AdminVerification";
+import AdminVerificationPage from "../pages/AdminVerificationPage";
+import AdminRoute from "./AdminRoute";
 
 const AppRoutes = () => {
   return (
@@ -24,8 +25,12 @@ const AppRoutes = () => {
       <Route path="/dashboard/settings" element={<SettingsPage/>}/>
       <Route path="/register" element={<Register/>}/>
       <Route path="/emergency/:userId" element={<EmergencyPage />}/>
-      <Route path="/verification"  element={<VerificationPage />}/>
-      <Route path="/admin/verification" element={<AdminVerification />}/>
+      <Route path="/dashboard/verification"  element={<VerificationPage />}/>
+      <Route path="/dashboard/admin/verifications" element={
+        <AdminRoute>
+          <AdminVerificationPage />
+        </AdminRoute>
+      }/>
 
     </Routes>
   );

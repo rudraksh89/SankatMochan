@@ -12,6 +12,7 @@ import verificationRoutes from "./routes/verificationRoutes.js";
 
 
 
+
 const app = express();
 
 app.use(
@@ -37,6 +38,7 @@ app.use("/api/documents", documentRoutes);
 app.use("/api/qr", qrRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/verification", verificationRoutes);
+
 
 app.get("/", (req, res) => {
   res.json({

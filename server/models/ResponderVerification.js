@@ -1,21 +1,22 @@
 import mongoose from "mongoose";
 
-const medicalDocumentSchema = new mongoose.Schema(
+const responderVerificationSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      unique: true,
     },
 
     documentType: {
       type: String,
       enum: [
-        "professional_id",
-        "medical_license",
-        "police_id",
-        "government_id",
-        "other",
+        "Government ID",
+        "Professional ID",
+        "Medical License",
+        "Police ID",
+        "Other",
       ],
       required: true,
     },
@@ -40,17 +41,13 @@ const medicalDocumentSchema = new mongoose.Schema(
       default: "auto",
     },
 
-    // ==============================
-    // ADMIN REVIEW
-    // ==============================
-
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
 
-    rejectionReason: {
+    adminRemark: {
       type: String,
       default: "",
     },
@@ -72,6 +69,6 @@ const medicalDocumentSchema = new mongoose.Schema(
 );
 
 export default mongoose.model(
-  "MedicalDocument",
-  medicalDocumentSchema
+  "ResponderVerification",
+  responderVerificationSchema
 );

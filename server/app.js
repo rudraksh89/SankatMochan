@@ -10,9 +10,6 @@ import qrRoutes from "./routes/qrRoutes.js";
 import publicRoutes from "./routes/publicRoutes.js";
 import verificationRoutes from "./routes/verificationRoutes.js";
 
-
-
-
 const app = express();
 
 app.use(
@@ -25,9 +22,7 @@ app.use(
 );
 
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: true }));
-
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);

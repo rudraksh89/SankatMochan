@@ -12,6 +12,7 @@ import EmergencyPage from "../pages/EmergencyPage";
 import VerificationPage from "../pages/VerificationPage";
 import AdminVerificationPage from "../pages/AdminVerificationPage";
 import AdminRoute from "./AdminRoute";
+import ResponderEmergencyPage from "../pages/ResponderEmergencyPage";
 
 const AppRoutes = () => {
   return (
@@ -31,6 +32,7 @@ const AppRoutes = () => {
           <AdminVerificationPage />
         </AdminRoute>
       }/>
+      <Route path="/dashboard/responder/emergency/:userId" element={<ResponderEmergencyPage />}/>
 
     </Routes>
   );

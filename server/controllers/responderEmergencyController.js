@@ -89,6 +89,12 @@ export const getEmergencyInformation = async (req, res) => {
         createdAt: -1,
       });
 
+      console.log("====================================");
+console.log("QR USER ID:", userId);
+console.log("DOCUMENT COUNT:", documents.length);
+console.log("DOCUMENTS:", documents);
+console.log("====================================");
+
     // =================================================
     // RESPONSE
     // =================================================

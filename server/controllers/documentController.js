@@ -2,16 +2,15 @@ import streamifier from "streamifier";
 import cloudinary from "../config/cloudinary.js";
 import PatientDocument from "../models/PatientDocument.js";
 
-
 // =====================================================
 // UPLOAD DOCUMENT
 // =====================================================
 
 export const uploadDocument = async (req, res) => {
   try {
-    // -------------------------------------------------
+    // -----------------------------------------------
     // CHECK FILE
-    // -------------------------------------------------
+    // -----------------------------------------------
 
     if (!req.file) {
       return res.status(400).json({
@@ -20,23 +19,41 @@ export const uploadDocument = async (req, res) => {
       });
     }
 
-    // -------------------------------------------------
+    // -----------------------------------------------
     // CHECK DOCUMENT TYPE
-    // -------------------------------------------------
+    // -----------------------------------------------
 
-    if (!req.body.documentType) {
+    const allowedTypes = [
+      "prescription",
+      "medical_report",
+      "blood_report",
+      "scan_report",
+      "discharge_summary",
+      "other",
+    ];
+
+    const { documentType } = req.body;
+
+    if (!documentType) {
       return res.status(400).json({
         success: false,
         message: "Document type is required",
       });
     }
 
-    // -------------------------------------------------
-    // UPLOAD TO CLOUDINARY
-    // -------------------------------------------------
+    if (!allowedTypes.includes(documentType)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid document type",
+      });
+    }
 
-    const streamUpload = () =>
-      new Promise((resolve, reject) => {
+    // -----------------------------------------------
+    // UPLOAD TO CLOUDINARY
+    // -----------------------------------------------
+
+    const streamUpload = () => {
+      return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           {
             folder: "SankatMochan/Documents",
@@ -55,30 +72,26 @@ export const uploadDocument = async (req, res) => {
           .createReadStream(req.file.buffer)
           .pipe(stream);
       });
+    };
 
     const result = await streamUpload();
 
-    // -------------------------------------------------
-    // SAVE DOCUMENT IN DATABASE
-    // -------------------------------------------------
+    // -----------------------------------------------
+    // SAVE DOCUMENT IN MONGODB
+    // -----------------------------------------------
 
     const document = await PatientDocument.create({
       user: req.user._id,
-
-      documentType: req.body.documentType,
-
+      documentType: documentType,
       fileName: req.file.originalname,
-
       fileUrl: result.secure_url,
-
       publicId: result.public_id,
-
       resourceType: result.resource_type,
     });
 
     console.log("=================================");
     console.log("DOCUMENT UPLOADED");
-    console.log("USER:", req.user._id);
+    console.log("USER ID:", req.user._id);
     console.log("DOCUMENT ID:", document._id);
     console.log("DOCUMENT TYPE:", document.documentType);
     console.log("FILE:", document.fileName);
@@ -103,14 +116,12 @@ export const uploadDocument = async (req, res) => {
   }
 };
 
-
 // =====================================================
 // GET MY DOCUMENTS
 // =====================================================
 
 export const getDocuments = async (req, res) => {
   try {
-
     const documents = await PatientDocument.find({
       user: req.user._id,
     }).sort({
@@ -123,7 +134,6 @@ export const getDocuments = async (req, res) => {
     });
 
   } catch (error) {
-
     console.error(
       "GET DOCUMENTS ERROR:",
       error
@@ -136,22 +146,16 @@ export const getDocuments = async (req, res) => {
   }
 };
 
-
 // =====================================================
-// DELETE DOCUMENT
+// DELETE MY DOCUMENT
 // =====================================================
 
 export const deleteDocument = async (req, res) => {
   try {
-
     const document = await PatientDocument.findOne({
       _id: req.params.id,
       user: req.user._id,
     });
-
-    // -------------------------------------------------
-    // DOCUMENT NOT FOUND
-    // -------------------------------------------------
 
     if (!document) {
       return res.status(404).json({
@@ -160,9 +164,9 @@ export const deleteDocument = async (req, res) => {
       });
     }
 
-    // -------------------------------------------------
+    // -----------------------------------------------
     // DELETE FROM CLOUDINARY
-    // -------------------------------------------------
+    // -----------------------------------------------
 
     await cloudinary.uploader.destroy(
       document.publicId,
@@ -171,9 +175,9 @@ export const deleteDocument = async (req, res) => {
       }
     );
 
-    // -------------------------------------------------
-    // DELETE FROM DATABASE
-    // -------------------------------------------------
+    // -----------------------------------------------
+    // DELETE FROM MONGODB
+    // -----------------------------------------------
 
     await document.deleteOne();
 
@@ -183,7 +187,6 @@ export const deleteDocument = async (req, res) => {
     });
 
   } catch (error) {
-
     console.error(
       "DELETE DOCUMENT ERROR:",
       error

@@ -13,51 +13,56 @@ import {
 
 const router = express.Router();
 
-
 // =====================================================
-// ALL ROUTES REQUIRE VERIFIED RESPONDER
+// ALL ROUTES REQUIRE PROTECTED VERIFIED RESPONDER
 // =====================================================
 
 router.use(protect);
 router.use(responderOnly);
 
-
-// Get my active emergency responses
+// =====================================================
+// MY ACTIVE RESPONSES
+// =====================================================
 
 router.get(
   "/my",
   getMyResponses
 );
 
-
-// Acknowledge victim emergency
+// =====================================================
+// ACKNOWLEDGE EMERGENCY
+// =====================================================
 
 router.post(
   "/acknowledge/:userId",
   acknowledgeEmergency
 );
 
-
-// Mark response as active
+// =====================================================
+// MARK RESPONDING
+// =====================================================
 
 router.put(
   "/responding/:id",
   markResponding
 );
 
-
-// Complete emergency
+// =====================================================
+// COMPLETE EMERGENCY
+// =====================================================
 
 router.put(
   "/complete/:id",
   completeEmergency
 );
 
+// =====================================================
+// GET PATIENT EMERGENCY INFORMATION
+// =====================================================
+
 router.get(
   "/:userId",
-  protect,
   getEmergencyInformation
 );
-
 
 export default router;

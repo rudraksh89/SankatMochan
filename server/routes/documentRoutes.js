@@ -1,4 +1,5 @@
 import express from "express";
+
 import protect from "../middleware/authMiddleware.js";
 import upload from "../middleware/uploadMiddleware.js";
 
@@ -10,25 +11,25 @@ import {
 
 const router = express.Router();
 
-// Upload Document
+// All document operations require logged-in user
+router.use(protect);
+
+// Upload
 router.post(
   "/",
-  protect,
   upload.single("document"),
   uploadDocument
 );
 
-// Get All Documents
+// Get my documents
 router.get(
   "/",
-  protect,
   getDocuments
 );
 
-// Delete Document
+// Delete my document
 router.delete(
   "/:id",
-  protect,
   deleteDocument
 );
 

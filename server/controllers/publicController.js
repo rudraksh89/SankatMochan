@@ -2,15 +2,19 @@ import User from "../models/User.js";
 import MedicalProfile from "../models/MedicalProfile.js";
 import EmergencyContact from "../models/EmergencyContact.js";
 import Insurance from "../models/Insurance.js";
-import MedicalDocument from "../models/MedicalDocument.js";
+import PatientDocument from "../models/PatientDocument.js";
+
+// =====================================================
+// GET PUBLIC EMERGENCY CARD
+// =====================================================
 
 export const getEmergencyCard = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // ==========================================
-    // PERSON WHOSE QR IS BEING SCANNED
-    // ==========================================
+    // =================================================
+    // FIND PATIENT
+    // =================================================
 
     const user = await User.findById(userId).select(
       "fullName phone email"
@@ -23,25 +27,25 @@ export const getEmergencyCard = async (req, res) => {
       });
     }
 
-    // ==========================================
-    // GET MEDICAL PROFILE
-    // ==========================================
+    // =================================================
+    // MEDICAL PROFILE
+    // =================================================
 
     const profile = await MedicalProfile.findOne({
       user: userId,
     });
 
-    // ==========================================
-    // GET EMERGENCY CONTACT
-    // ==========================================
+    // =================================================
+    // EMERGENCY CONTACT
+    // =================================================
 
     const contact = await EmergencyContact.findOne({
       user: userId,
     });
 
-    // ==========================================
-    // CHECK WHO IS SCANNING
-    // ==========================================
+    // =================================================
+    // CHECK VERIFIED RESPONDER
+    // =================================================
 
     const isVerifiedResponder =
       req.user &&
@@ -49,10 +53,10 @@ export const getEmergencyCard = async (req, res) => {
       req.user.isVerified === true &&
       req.user.verificationStatus === "approved";
 
-    // ==========================================
+    // =================================================
     // BASIC INFORMATION
-    // EVERYONE CAN SEE THIS
-    // ==========================================
+    // EVERYONE CAN SEE
+    // =================================================
 
     const emergencyCard = {
       fullName: user.fullName,
@@ -66,27 +70,31 @@ export const getEmergencyCard = async (req, res) => {
         : "public",
     };
 
-    // ==========================================
-    // FULL INFORMATION
-    // ONLY VERIFIED RESPONDERS
-    // ==========================================
+    // =================================================
+    // VERIFIED RESPONDER INFORMATION
+    // =================================================
 
     if (isVerifiedResponder) {
 
-      // ========================================
+      // -----------------------------------------------
       // FULL MEDICAL PROFILE
-      // ========================================
+      // -----------------------------------------------
 
       emergencyCard.medicalProfile = {
-        dateOfBirth: profile?.dateOfBirth || null,
+        dateOfBirth:
+          profile?.dateOfBirth || null,
 
-        gender: profile?.gender || "",
+        gender:
+          profile?.gender || "",
 
-        height: profile?.height || 0,
+        height:
+          profile?.height || 0,
 
-        weight: profile?.weight || 0,
+        weight:
+          profile?.weight || 0,
 
-        allergies: profile?.allergies || "",
+        allergies:
+          profile?.allergies || "",
 
         medicalConditions:
           profile?.medicalConditions || "",
@@ -101,46 +109,52 @@ export const getEmergencyCard = async (req, res) => {
           profile?.address || "",
       };
 
-      // ========================================
-      // PATIENT CONTACT INFORMATION
-      // ========================================
+      // -----------------------------------------------
+      // CONTACT
+      // -----------------------------------------------
 
       emergencyCard.phone = user.phone;
-
       emergencyCard.email = user.email;
 
-      // ========================================
+      // -----------------------------------------------
       // INSURANCE
-      // ========================================
+      // -----------------------------------------------
 
-      const insurance = await Insurance.findOne({
-        user: userId,
-      }).sort({
-        createdAt: -1,
-      });
-
-      emergencyCard.insurance = insurance;
-
-      // ========================================
-      // MEDICAL DOCUMENTS
-      // ========================================
-
-      const documents = await MedicalDocument.find({
-        user: userId,
-      })
-        .select(
-          "_id documentType fileName fileUrl resourceType createdAt"
-        )
-        .sort({
+      emergencyCard.insurance =
+        await Insurance.findOne({
+          user: userId,
+        }).sort({
           createdAt: -1,
         });
+
+      // -----------------------------------------------
+      // MEDICAL DOCUMENTS
+      // -----------------------------------------------
+
+      const documents =
+        await PatientDocument.find({
+          user: userId,
+        })
+          .select(
+            "_id documentType fileName fileUrl publicId resourceType createdAt"
+          )
+          .sort({
+            createdAt: -1,
+          });
+
+      console.log("=================================");
+      console.log("EMERGENCY CARD");
+      console.log("QR USER ID:", userId);
+      console.log("DOCUMENT COUNT:", documents.length);
+      console.log("DOCUMENTS:", documents);
+      console.log("=================================");
 
       emergencyCard.documents = documents;
     }
 
-    // ==========================================
+    // =================================================
     // RESPONSE
-    // ==========================================
+    // =================================================
 
     return res.status(200).json({
       success: true,
@@ -148,7 +162,6 @@ export const getEmergencyCard = async (req, res) => {
     });
 
   } catch (error) {
-
     console.error(
       "GET EMERGENCY CARD ERROR:",
       error

@@ -9,7 +9,6 @@ const EmergencyPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Responder login state
   const [showLogin, setShowLogin] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -20,6 +19,10 @@ const EmergencyPage = () => {
     fetchCard();
   }, [userId]);
 
+  // =====================================================
+  // FETCH EMERGENCY CARD
+  // =====================================================
+
   const fetchCard = async (token = null) => {
     try {
       setLoading(true);
@@ -27,24 +30,30 @@ const EmergencyPage = () => {
 
       const config = {};
 
-      // If a fresh token is passed (from responder login),
-      // use it directly instead of relying on the interceptor
       if (token) {
         config.headers = {
           Authorization: `Bearer ${token}`,
         };
       }
 
-      const res = await api.get(
-        `/public/${userId}`,
-        config
-      );
+      const res = await api.get(`/public/${userId}`, config);
 
-      console.log("Emergency Card:", res.data);
+      console.log("=================================");
+      console.log("PUBLIC EMERGENCY CARD:");
+      console.log(res.data);
+      console.log("EMERGENCY CARD:");
+      console.log(res.data.emergencyCard);
+      console.log("INSURANCE:");
+      console.log(res.data.emergencyCard?.insurance);
+      console.log("DOCUMENTS:");
+      console.log(res.data.emergencyCard?.documents);
+      console.log("=================================");
+
       setCard(res.data.emergencyCard);
 
     } catch (err) {
-      console.error(err);
+      console.error("Emergency card error:", err);
+
       setError(
         err.response?.data?.message ||
           "Unable to load emergency card"
@@ -54,12 +63,13 @@ const EmergencyPage = () => {
     }
   };
 
-  // ==========================================
-  // RESPONDER LOGIN HANDLER
-  // ==========================================
+  // =====================================================
+  // RESPONDER LOGIN
+  // =====================================================
 
   const handleResponderLogin = async (e) => {
     e.preventDefault();
+
     setLoginError("");
     setLoginLoading(true);
 
@@ -71,28 +81,33 @@ const EmergencyPage = () => {
 
       const { token, user } = res.data;
 
-      // Check if this user is actually a verified responder
+      console.log("RESPONDER LOGIN USER:", user);
+
+      // Check responder
       if (
         user.accountType !== "responder" ||
-        !user.isVerified ||
+        user.isVerified !== true ||
         user.verificationStatus !== "approved"
       ) {
         setLoginError(
           "Access denied. Only verified responders can view full medical details."
         );
+
         setLoginLoading(false);
         return;
       }
 
-      // Store token temporarily for this session
+      // Save token
       localStorage.setItem("token", token);
 
-      // Re-fetch the emergency card with the responder's token
       setShowLogin(false);
+
+      // Fetch full information
       await fetchCard(token);
 
     } catch (err) {
       console.error("Responder login error:", err);
+
       setLoginError(
         err.response?.data?.message ||
           "Login failed. Please try again."
@@ -102,18 +117,20 @@ const EmergencyPage = () => {
     }
   };
 
-  // ==========================================
-  // LOADING STATE
-  // ==========================================
+  // =====================================================
+  // LOADING
+  // =====================================================
 
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.loadingCard}>
           <div style={styles.pulseIcon}>🚑</div>
+
           <p style={styles.loadingText}>
             Loading emergency information...
           </p>
+
           <div style={styles.loadingBar}>
             <div style={styles.loadingBarInner} />
           </div>
@@ -122,44 +139,72 @@ const EmergencyPage = () => {
     );
   }
 
-  // ==========================================
-  // ERROR STATE
-  // ==========================================
+  // =====================================================
+  // ERROR
+  // =====================================================
 
   if (error || !card) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.errorCard}>
           <span style={{ fontSize: "48px" }}>⚠️</span>
+
           <h2 style={styles.errorTitle}>
             Emergency Card Not Found
           </h2>
+
           <p style={styles.errorText}>
-            {error || "This emergency card does not exist or has been removed."}
+            {error ||
+              "This emergency card does not exist or has been removed."}
           </p>
         </div>
       </div>
     );
   }
 
+  // =====================================================
+  // CHECK RESPONDER
+  // =====================================================
+
   const isVerifiedResponder =
     card.accessLevel === "verified_responder";
 
-  // =========================================
-  // VERIFIED RESPONDER — FULL MEDICAL VIEW
-  // =========================================
+  // =====================================================
+  // VERIFIED RESPONDER VIEW
+  // =====================================================
 
   if (isVerifiedResponder) {
     const mp = card.medicalProfile || {};
+
+    // -------------------------------------------------
+    // IMPORTANT:
+    // Insurance can be ARRAY or OBJECT
+    // -------------------------------------------------
+
+    const insurance = Array.isArray(card.insurance)
+      ? card.insurance
+      : card.insurance
+      ? [card.insurance]
+      : [];
+
+    // -------------------------------------------------
+    // Documents
+    // -------------------------------------------------
+
+    const documents = Array.isArray(card.documents)
+      ? card.documents
+      : [];
 
     return (
       <div style={styles.pageResponder}>
         <div style={styles.container}>
 
-          {/* RESPONDER HEADER */}
+          {/* HEADER */}
+
           <div style={styles.responderHeader}>
             <div style={styles.responderBadge}>
               <span style={styles.badgeIcon}>✓</span>
+
               Verified Responder Access
             </div>
 
@@ -168,51 +213,72 @@ const EmergencyPage = () => {
             </h1>
 
             <p style={styles.responderSubtitle}>
-              Full medical details — accessible only to
-              verified emergency responders.
+              Full medical details accessible to verified
+              emergency responders.
             </p>
           </div>
 
+          {/* ================================================= */}
           {/* PATIENT INFORMATION */}
+          {/* ================================================= */}
+
           <Section
             icon="👤"
             title="Patient Information"
             color="#3b82f6"
           >
             <div style={styles.grid}>
+
               <InfoCard
                 label="Full Name"
                 value={card.fullName}
                 icon="🏷️"
               />
+
               <InfoCard
                 label="Phone"
                 value={card.phone}
                 icon="📱"
-                isLink={`tel:${card.phone}`}
+                isLink={
+                  card.phone
+                    ? `tel:${card.phone}`
+                    : null
+                }
               />
+
               <InfoCard
                 label="Email"
                 value={card.email}
                 icon="✉️"
-                isLink={`mailto:${card.email}`}
+                isLink={
+                  card.email
+                    ? `mailto:${card.email}`
+                    : null
+                }
               />
+
               <InfoCard
                 label="Blood Group"
                 value={card.bloodGroup}
                 icon="🩸"
                 highlight
               />
+
             </div>
           </Section>
 
+          {/* ================================================= */}
           {/* MEDICAL PROFILE */}
+          {/* ================================================= */}
+
           <Section
             icon="🩺"
             title="Medical Profile"
             color="#8b5cf6"
           >
+
             <div style={styles.grid}>
+
               <InfoCard
                 label="Date of Birth"
                 value={
@@ -228,75 +294,104 @@ const EmergencyPage = () => {
                 }
                 icon="📅"
               />
+
               <InfoCard
                 label="Gender"
                 value={mp.gender}
                 icon="⚧"
               />
+
               <InfoCard
                 label="Height"
                 value={
-                  mp.height ? `${mp.height} cm` : null
+                  mp.height
+                    ? `${mp.height} cm`
+                    : null
                 }
                 icon="📏"
               />
+
               <InfoCard
                 label="Weight"
                 value={
-                  mp.weight ? `${mp.weight} kg` : null
+                  mp.weight
+                    ? `${mp.weight} kg`
+                    : null
                 }
                 icon="⚖️"
               />
+
             </div>
 
-            {/* Critical Medical Info */}
+            {/* CRITICAL INFORMATION */}
+
             <div style={styles.criticalSection}>
+
               <h3 style={styles.criticalTitle}>
                 ⚠️ Critical Medical Information
               </h3>
+
               <div style={styles.criticalGrid}>
+
                 <CriticalInfo
                   label="Allergies"
                   value={mp.allergies}
                   color="#ef4444"
                 />
+
                 <CriticalInfo
                   label="Medical Conditions"
                   value={mp.medicalConditions}
                   color="#f59e0b"
                 />
+
                 <CriticalInfo
                   label="Current Medications"
                   value={mp.medications}
                   color="#3b82f6"
                 />
+
               </div>
+
             </div>
 
             <div style={styles.grid}>
+
               <InfoCard
                 label="Organ Donor"
-                value={mp.organDonor ? "Yes ✓" : "No"}
+                value={
+                  mp.organDonor
+                    ? "Yes ✓"
+                    : "No"
+                }
                 icon="💚"
                 highlight={mp.organDonor}
               />
+
               <InfoCard
                 label="Address"
                 value={mp.address}
                 icon="📍"
               />
+
             </div>
+
           </Section>
 
+          {/* ================================================= */}
           {/* EMERGENCY CONTACT */}
+          {/* ================================================= */}
+
           <Section
             icon="📞"
             title="Emergency Contact"
             color="#ef4444"
           >
+
             {card.emergencyContact ? (
               <>
                 <div style={styles.grid}>
+
                   <InfoCard
                     label="Contact Name"
                     value={
@@ -304,6 +399,7 @@ const EmergencyPage = () => {
                     }
                     icon="👤"
                   />
+
                   <InfoCard
                     label="Relationship"
                     value={
@@ -311,25 +407,39 @@ const EmergencyPage = () => {
                     }
                     icon="🤝"
                   />
+
                   <InfoCard
                     label="Phone"
-                    value={card.emergencyContact.phone}
+                    value={
+                      card.emergencyContact.phone
+                    }
                     icon="📱"
-                    isLink={`tel:${card.emergencyContact.phone}`}
+                    isLink={
+                      card.emergencyContact.phone
+                        ? `tel:${card.emergencyContact.phone}`
+                        : null
+                    }
                   />
+
                   <InfoCard
                     label="Email"
-                    value={card.emergencyContact.email}
+                    value={
+                      card.emergencyContact.email
+                    }
                     icon="✉️"
                   />
+
                   <InfoCard
                     label="Address"
-                    value={card.emergencyContact.address}
+                    value={
+                      card.emergencyContact.address
+                    }
                     icon="📍"
                   />
+
                 </div>
 
-                {card.emergencyContact?.phone && (
+                {card.emergencyContact.phone && (
                   <a
                     href={`tel:${card.emergencyContact.phone}`}
                     style={styles.callButton}
@@ -343,52 +453,170 @@ const EmergencyPage = () => {
                 No emergency contact available.
               </p>
             )}
+
           </Section>
 
+          {/* ================================================= */}
           {/* INSURANCE */}
+          {/* ================================================= */}
+
           <Section
             icon="🏥"
             title="Insurance Information"
             color="#10b981"
           >
-            {card.insurance ? (
-              <div style={styles.grid}>
-                <InfoCard
-                  label="Provider"
-                  value={card.insurance.provider}
-                  icon="🏢"
-                />
-                <InfoCard
-                  label="Policy Number"
-                  value={card.insurance.policyNumber}
-                  icon="📋"
-                />
-                <InfoCard
-                  label="Policy Holder"
-                  value={card.insurance.policyHolder}
-                  icon="👤"
-                />
-                <InfoCard
-                  label="Valid Till"
-                  value={
-                    card.insurance.validTill
-                      ? new Date(
-                          card.insurance.validTill
-                        ).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })
-                      : null
-                  }
-                  icon="📅"
-                />
+
+            {insurance.length > 0 ? (
+
+              <div style={styles.insuranceList}>
+
+                {insurance.map((item, index) => (
+
+                  <div
+                    key={item._id || index}
+                    style={styles.insuranceCard}
+                  >
+
+                    <div style={styles.grid}>
+
+                      <InfoCard
+                        label="Provider"
+                        value={item.provider}
+                        icon="🏢"
+                      />
+
+                      <InfoCard
+                        label="Policy Number"
+                        value={item.policyNumber}
+                        icon="📋"
+                      />
+
+                      <InfoCard
+                        label="Policy Holder"
+                        value={item.policyHolder}
+                        icon="👤"
+                      />
+
+                      <InfoCard
+                        label="Valid Till"
+                        value={
+                          item.validTill
+                            ? new Date(
+                                item.validTill
+                              ).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  day: "numeric",
+                                  month: "long",
+                                  year: "numeric",
+                                }
+                              )
+                            : null
+                        }
+                        icon="📅"
+                      />
+
+                    </div>
+
+                  </div>
+
+                ))}
+
               </div>
+
             ) : (
+
               <p style={styles.emptyText}>
                 No insurance information available.
               </p>
+
             )}
+
+          </Section>
+
+          {/* ================================================= */}
+          {/* MEDICAL DOCUMENTS */}
+          {/* ================================================= */}
+
+          <Section
+            icon="📄"
+            title="Medical Documents"
+            color="#f59e0b"
+          >
+
+            {documents.length > 0 ? (
+
+              <div style={styles.documentsGrid}>
+
+                {documents.map((doc, index) => (
+
+                  <div
+                    key={doc._id || index}
+                    style={styles.documentCard}
+                  >
+
+                    <div style={styles.documentIcon}>
+                      📄
+                    </div>
+
+                    <div style={styles.documentInfo}>
+
+                      <p style={styles.documentType}>
+                        {doc.documentType ||
+                          "Medical Document"}
+                      </p>
+
+                      <p style={styles.documentName}>
+                        {doc.fileName ||
+                          "Document"}
+                      </p>
+
+                      {doc.createdAt && (
+                        <p style={styles.documentDate}>
+                          Uploaded{" "}
+                          {new Date(
+                            doc.createdAt
+                          ).toLocaleDateString(
+                            "en-IN"
+                          )}
+                        </p>
+                      )}
+
+                    </div>
+
+                    {doc.fileUrl && (
+                      <a
+                        href={doc.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={styles.viewDocumentButton}
+                      >
+                        View
+                      </a>
+                    )}
+
+                  </div>
+
+                ))}
+
+              </div>
+
+            ) : (
+
+              <div style={styles.noDocuments}>
+
+                <div style={styles.folderIcon}>
+                  📂
+                </div>
+
+                <p>
+                  No medical documents available.
+                </p>
+
+              </div>
+
+            )}
+
           </Section>
 
         </div>
@@ -396,18 +624,20 @@ const EmergencyPage = () => {
     );
   }
 
-  // =========================================
-  // PUBLIC / NORMAL USER — BASIC VIEW
-  // =========================================
+  // =====================================================
+  // PUBLIC VIEW
+  // =====================================================
 
   return (
     <div style={styles.pagePublic}>
       <div style={styles.publicContainer}>
 
-        {/* Emergency Header */}
         <div style={styles.publicHeader}>
+
           <div style={styles.emergencyPulse}>
-            <span style={styles.emergencyIcon}>🚑</span>
+            <span style={styles.emergencyIcon}>
+              🚑
+            </span>
           </div>
 
           <h1 style={styles.publicTitle}>
@@ -417,14 +647,18 @@ const EmergencyPage = () => {
           <p style={styles.publicSubtitle}>
             Basic emergency information
           </p>
+
         </div>
 
-        {/* Basic Info */}
+        {/* BASIC INFORMATION */}
+
         <div style={styles.publicCard}>
+
           <div style={styles.publicInfoRow}>
             <span style={styles.publicLabel}>
               👤 Name
             </span>
+
             <span style={styles.publicValue}>
               {card.fullName}
             </span>
@@ -436,20 +670,26 @@ const EmergencyPage = () => {
             <span style={styles.publicLabel}>
               🩸 Blood Group
             </span>
+
             <span
               style={{
                 ...styles.publicValue,
                 ...styles.bloodBadge,
               }}
             >
-              {card.bloodGroup || "Not Available"}
+              {card.bloodGroup ||
+                "Not Available"}
             </span>
           </div>
+
         </div>
 
-        {/* Emergency Contact */}
+        {/* EMERGENCY CONTACT */}
+
         {card.emergencyContact && (
+
           <div style={styles.publicCard}>
+
             <h2 style={styles.publicSectionTitle}>
               📞 Emergency Contact
             </h2>
@@ -458,6 +698,7 @@ const EmergencyPage = () => {
               <span style={styles.publicLabel}>
                 Name
               </span>
+
               <span style={styles.publicValue}>
                 {card.emergencyContact.contactName}
               </span>
@@ -469,6 +710,7 @@ const EmergencyPage = () => {
               <span style={styles.publicLabel}>
                 Relationship
               </span>
+
               <span style={styles.publicValue}>
                 {card.emergencyContact.relationship}
               </span>
@@ -480,12 +722,13 @@ const EmergencyPage = () => {
               <span style={styles.publicLabel}>
                 Phone
               </span>
+
               <span style={styles.publicValue}>
                 {card.emergencyContact.phone}
               </span>
             </div>
 
-            {card.emergencyContact?.phone && (
+            {card.emergencyContact.phone && (
               <a
                 href={`tel:${card.emergencyContact.phone}`}
                 style={styles.publicCallButton}
@@ -493,38 +736,54 @@ const EmergencyPage = () => {
                 📞 Call Emergency Contact
               </a>
             )}
+
           </div>
+
         )}
 
-        {/* Responder Login Section */}
+        {/* RESPONDER LOGIN */}
+
         <div style={styles.responderLoginSection}>
 
           {!showLogin ? (
             <>
-              <div style={styles.lockIcon}>🔒</div>
+
+              <div style={styles.lockIcon}>
+                🔒
+              </div>
+
               <p style={styles.responderLoginText}>
                 Are you a verified emergency responder?
               </p>
+
               <p style={styles.responderLoginSubtext}>
                 Login to access full medical details
-                including allergies, medications, conditions,
-                and insurance.
+                including allergies, medications,
+                conditions, insurance and medical
+                documents.
               </p>
+
               <button
-                onClick={() => setShowLogin(true)}
+                onClick={() =>
+                  setShowLogin(true)
+                }
                 style={styles.responderLoginButton}
               >
                 🛡️ Verify as Responder
               </button>
+
             </>
           ) : (
+
             <>
+
               <h3 style={styles.loginFormTitle}>
                 🛡️ Responder Verification
               </h3>
 
               <p style={styles.loginFormSubtitle}>
-                Login with your verified responder account
+                Login with your verified responder
+                account
               </p>
 
               {loginError && (
@@ -537,10 +796,13 @@ const EmergencyPage = () => {
                 onSubmit={handleResponderLogin}
                 style={styles.loginForm}
               >
+
                 <div style={styles.inputGroup}>
+
                   <label style={styles.inputLabel}>
                     Email
                   </label>
+
                   <input
                     type="email"
                     value={loginEmail}
@@ -551,12 +813,15 @@ const EmergencyPage = () => {
                     required
                     style={styles.input}
                   />
+
                 </div>
 
                 <div style={styles.inputGroup}>
+
                   <label style={styles.inputLabel}>
                     Password
                   </label>
+
                   <input
                     type="password"
                     value={loginPassword}
@@ -567,6 +832,7 @@ const EmergencyPage = () => {
                     required
                     style={styles.input}
                   />
+
                 </div>
 
                 <button
@@ -574,7 +840,9 @@ const EmergencyPage = () => {
                   disabled={loginLoading}
                   style={{
                     ...styles.submitButton,
-                    opacity: loginLoading ? 0.7 : 1,
+                    opacity: loginLoading
+                      ? 0.7
+                      : 1,
                   }}
                 >
                   {loginLoading
@@ -592,9 +860,12 @@ const EmergencyPage = () => {
                 >
                   Cancel
                 </button>
+
               </form>
+
             </>
           )}
+
         </div>
 
       </div>
@@ -602,28 +873,39 @@ const EmergencyPage = () => {
   );
 };
 
-// =========================================
-// SECTION COMPONENT
-// =========================================
+// =====================================================
+// SECTION
+// =====================================================
 
-const Section = ({ icon, title, color, children }) => (
+const Section = ({
+  icon,
+  title,
+  color,
+  children,
+}) => (
   <div style={styles.section}>
+
     <h2
       style={{
         ...styles.sectionTitle,
         borderLeftColor: color,
       }}
     >
-      <span style={{ marginRight: "8px" }}>{icon}</span>
+      <span style={{ marginRight: "8px" }}>
+        {icon}
+      </span>
+
       {title}
     </h2>
+
     {children}
+
   </div>
 );
 
-// =========================================
-// INFO CARD COMPONENT
-// =========================================
+// =====================================================
+// INFO CARD
+// =====================================================
 
 const InfoCard = ({
   label,
@@ -632,23 +914,36 @@ const InfoCard = ({
   highlight,
   isLink,
 }) => {
+
   const content = (
     <div
       style={{
         ...styles.infoCard,
-        ...(highlight ? styles.infoCardHighlight : {}),
+        ...(highlight
+          ? styles.infoCardHighlight
+          : {}),
       }}
     >
-      <div style={styles.infoCardIcon}>{icon}</div>
-      <p style={styles.infoCardLabel}>{label}</p>
+
+      <div style={styles.infoCardIcon}>
+        {icon}
+      </div>
+
+      <p style={styles.infoCardLabel}>
+        {label}
+      </p>
+
       <p
         style={{
           ...styles.infoCardValue,
-          ...(isLink ? { color: "#3b82f6" } : {}),
+          ...(isLink
+            ? { color: "#3b82f6" }
+            : {}),
         }}
       >
         {value || "Not provided"}
       </p>
+
     </div>
   );
 
@@ -656,7 +951,9 @@ const InfoCard = ({
     return (
       <a
         href={isLink}
-        style={{ textDecoration: "none" }}
+        style={{
+          textDecoration: "none",
+        }}
       >
         {content}
       </a>
@@ -666,51 +963,62 @@ const InfoCard = ({
   return content;
 };
 
-// =========================================
-// CRITICAL INFO COMPONENT
-// =========================================
+// =====================================================
+// CRITICAL INFO
+// =====================================================
 
-const CriticalInfo = ({ label, value, color }) => (
+const CriticalInfo = ({
+  label,
+  value,
+  color,
+}) => (
   <div
     style={{
       ...styles.criticalCard,
       borderLeftColor: color,
     }}
   >
-    <p style={styles.criticalLabel}>{label}</p>
+
+    <p style={styles.criticalLabel}>
+      {label}
+    </p>
+
     <p style={styles.criticalValue}>
       {value || "None reported"}
     </p>
+
   </div>
 );
 
-// =========================================
+// =====================================================
 // STYLES
-// =========================================
+// =====================================================
 
 const styles = {
-  // Loading
+
   loadingContainer: {
     minHeight: "100vh",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+    background:
+      "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
     padding: "20px",
   },
 
   loadingCard: {
-    background: "rgba(255, 255, 255, 0.05)",
+    background:
+      "rgba(255, 255, 255, 0.05)",
     backdropFilter: "blur(20px)",
     borderRadius: "24px",
     padding: "48px",
     textAlign: "center",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
+    border:
+      "1px solid rgba(255, 255, 255, 0.1)",
   },
 
   pulseIcon: {
     fontSize: "64px",
-    animation: "pulse 2s infinite",
     marginBottom: "16px",
   },
 
@@ -723,7 +1031,8 @@ const styles = {
   loadingBar: {
     width: "200px",
     height: "4px",
-    background: "rgba(255, 255, 255, 0.1)",
+    background:
+      "rgba(255, 255, 255, 0.1)",
     borderRadius: "4px",
     overflow: "hidden",
     margin: "0 auto",
@@ -732,19 +1041,20 @@ const styles = {
   loadingBarInner: {
     width: "40%",
     height: "100%",
-    background: "linear-gradient(90deg, #3b82f6, #8b5cf6)",
+    background:
+      "linear-gradient(90deg, #3b82f6, #8b5cf6)",
     borderRadius: "4px",
-    animation: "loading 1.5s infinite ease-in-out",
   },
 
-  // Error
   errorCard: {
-    background: "rgba(255, 255, 255, 0.05)",
+    background:
+      "rgba(255, 255, 255, 0.05)",
     backdropFilter: "blur(20px)",
     borderRadius: "24px",
     padding: "48px",
     textAlign: "center",
-    border: "1px solid rgba(239, 68, 68, 0.3)",
+    border:
+      "1px solid rgba(239, 68, 68, 0.3)",
     maxWidth: "400px",
   },
 
@@ -761,12 +1071,13 @@ const styles = {
     marginTop: "8px",
   },
 
-  // ======= RESPONDER VIEW =======
   pageResponder: {
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
+    background:
+      "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
     padding: "24px 16px 48px",
-    fontFamily: "'Inter', 'Poppins', sans-serif",
+    fontFamily:
+      "'Inter', 'Poppins', sans-serif",
   },
 
   container: {
@@ -775,38 +1086,36 @@ const styles = {
   },
 
   responderHeader: {
-    background: "linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)",
+    background:
+      "linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)",
     borderRadius: "24px",
     padding: "32px",
     marginBottom: "24px",
-    boxShadow: "0 20px 60px rgba(29, 78, 216, 0.3)",
   },
 
   responderBadge: {
     display: "inline-flex",
     alignItems: "center",
     gap: "8px",
-    background: "rgba(74, 222, 128, 0.15)",
+    background:
+      "rgba(74, 222, 128, 0.15)",
     color: "#86efac",
     padding: "6px 16px",
     borderRadius: "100px",
     fontSize: "13px",
     fontWeight: "600",
     marginBottom: "16px",
-    border: "1px solid rgba(74, 222, 128, 0.3)",
   },
 
   badgeIcon: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
     width: "20px",
     height: "20px",
     borderRadius: "50%",
     background: "#22c55e",
     color: "white",
-    fontSize: "11px",
-    fontWeight: "700",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   responderTitle: {
@@ -814,31 +1123,31 @@ const styles = {
     fontSize: "28px",
     fontWeight: "800",
     margin: "0",
-    lineHeight: "1.3",
   },
 
   responderSubtitle: {
-    color: "rgba(199, 210, 254, 0.8)",
+    color:
+      "rgba(199, 210, 254, 0.8)",
     fontSize: "14px",
     marginTop: "8px",
-    lineHeight: "1.5",
   },
 
-  // Sections
   section: {
-    background: "rgba(255, 255, 255, 0.03)",
+    background:
+      "rgba(255, 255, 255, 0.03)",
     backdropFilter: "blur(20px)",
     borderRadius: "20px",
     padding: "28px",
     marginBottom: "20px",
-    border: "1px solid rgba(255, 255, 255, 0.06)",
+    border:
+      "1px solid rgba(255, 255, 255, 0.06)",
   },
 
   sectionTitle: {
     color: "white",
     fontSize: "18px",
     fontWeight: "700",
-    margin: "0 0 20px 0",
+    margin: "0 0 20px",
     paddingLeft: "16px",
     borderLeft: "4px solid",
     display: "flex",
@@ -847,23 +1156,25 @@ const styles = {
 
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fill, minmax(200px, 1fr))",
     gap: "14px",
   },
 
-  // Info Card
   infoCard: {
-    background: "rgba(255, 255, 255, 0.04)",
+    background:
+      "rgba(255, 255, 255, 0.04)",
     borderRadius: "16px",
     padding: "18px",
-    transition: "all 0.3s ease",
-    border: "1px solid rgba(255, 255, 255, 0.06)",
-    cursor: "default",
+    border:
+      "1px solid rgba(255, 255, 255, 0.06)",
   },
 
   infoCardHighlight: {
-    background: "rgba(239, 68, 68, 0.08)",
-    border: "1px solid rgba(239, 68, 68, 0.2)",
+    background:
+      "rgba(239, 68, 68, 0.08)",
+    border:
+      "1px solid rgba(239, 68, 68, 0.2)",
   },
 
   infoCardIcon: {
@@ -876,8 +1187,7 @@ const styles = {
     fontSize: "12px",
     fontWeight: "500",
     textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    margin: "0 0 4px 0",
+    margin: "0 0 4px",
   },
 
   infoCardValue: {
@@ -888,20 +1198,18 @@ const styles = {
     wordBreak: "break-word",
   },
 
-  // Critical Section
   criticalSection: {
     margin: "20px 0",
-    background: "rgba(239, 68, 68, 0.04)",
+    background:
+      "rgba(239, 68, 68, 0.04)",
     borderRadius: "16px",
     padding: "20px",
-    border: "1px solid rgba(239, 68, 68, 0.1)",
   },
 
   criticalTitle: {
     color: "#fbbf24",
     fontSize: "16px",
-    fontWeight: "700",
-    margin: "0 0 16px 0",
+    margin: "0 0 16px",
   },
 
   criticalGrid: {
@@ -911,7 +1219,8 @@ const styles = {
   },
 
   criticalCard: {
-    background: "rgba(0, 0, 0, 0.2)",
+    background:
+      "rgba(0, 0, 0, 0.2)",
     borderRadius: "12px",
     padding: "16px",
     borderLeft: "4px solid",
@@ -922,30 +1231,26 @@ const styles = {
     fontSize: "12px",
     fontWeight: "600",
     textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    margin: "0 0 6px 0",
+    margin: "0 0 6px",
   },
 
   criticalValue: {
     color: "#e2e8f0",
     fontSize: "15px",
-    fontWeight: "500",
     margin: "0",
     lineHeight: "1.6",
   },
 
   callButton: {
     display: "inline-block",
-    background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
+    background:
+      "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
     color: "white",
     padding: "14px 28px",
     borderRadius: "14px",
     textDecoration: "none",
     fontWeight: "700",
-    fontSize: "15px",
     marginTop: "20px",
-    transition: "all 0.3s ease",
-    boxShadow: "0 8px 24px rgba(220, 38, 38, 0.3)",
   },
 
   emptyText: {
@@ -954,15 +1259,107 @@ const styles = {
     fontStyle: "italic",
   },
 
-  // ======= PUBLIC VIEW =======
+  // =================================================
+  // INSURANCE
+  // =================================================
+
+  insuranceList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "14px",
+  },
+
+  insuranceCard: {
+    background:
+      "rgba(16, 185, 129, 0.04)",
+    borderRadius: "16px",
+    padding: "4px",
+    border:
+      "1px solid rgba(16, 185, 129, 0.12)",
+  },
+
+  // =================================================
+  // DOCUMENTS
+  // =================================================
+
+  documentsGrid: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+  },
+
+  documentCard: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+    background:
+      "rgba(255, 255, 255, 0.04)",
+    borderRadius: "14px",
+    padding: "16px",
+    border:
+      "1px solid rgba(255, 255, 255, 0.06)",
+  },
+
+  documentIcon: {
+    fontSize: "32px",
+  },
+
+  documentInfo: {
+    flex: 1,
+  },
+
+  documentType: {
+    color: "#e2e8f0",
+    fontSize: "15px",
+    fontWeight: "700",
+    margin: "0 0 4px",
+  },
+
+  documentName: {
+    color: "#94a3b8",
+    fontSize: "13px",
+    margin: "0 0 4px",
+  },
+
+  documentDate: {
+    color: "#64748b",
+    fontSize: "11px",
+    margin: 0,
+  },
+
+  viewDocumentButton: {
+    background:
+      "linear-gradient(135deg, #1d4ed8, #7c3aed)",
+    color: "white",
+    padding: "9px 16px",
+    borderRadius: "10px",
+    textDecoration: "none",
+    fontSize: "13px",
+    fontWeight: "600",
+  },
+
+  noDocuments: {
+    textAlign: "center",
+    padding: "30px",
+    color: "#64748b",
+  },
+
+  folderIcon: {
+    fontSize: "50px",
+    marginBottom: "10px",
+  },
+
+  // =================================================
+  // PUBLIC
+  // =================================================
+
   pagePublic: {
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #0f172a 0%, #1e1a2e 50%, #0f172a 100%)",
+    background:
+      "linear-gradient(135deg, #0f172a 0%, #1e1a2e 50%, #0f172a 100%)",
     display: "flex",
     justifyContent: "center",
-    alignItems: "flex-start",
     padding: "24px 16px 48px",
-    fontFamily: "'Inter', 'Poppins', sans-serif",
   },
 
   publicContainer: {
@@ -983,8 +1380,8 @@ const styles = {
     width: "80px",
     height: "80px",
     borderRadius: "50%",
-    background: "rgba(239, 68, 68, 0.1)",
-    border: "2px solid rgba(239, 68, 68, 0.3)",
+    background:
+      "rgba(239, 68, 68, 0.1)",
     marginBottom: "20px",
   },
 
@@ -997,7 +1394,6 @@ const styles = {
     fontSize: "26px",
     fontWeight: "800",
     margin: "0",
-    letterSpacing: "-0.02em",
   },
 
   publicSubtitle: {
@@ -1007,19 +1403,17 @@ const styles = {
   },
 
   publicCard: {
-    background: "rgba(255, 255, 255, 0.04)",
-    backdropFilter: "blur(20px)",
+    background:
+      "rgba(255, 255, 255, 0.04)",
     borderRadius: "20px",
     padding: "24px",
     marginBottom: "16px",
-    border: "1px solid rgba(255, 255, 255, 0.06)",
   },
 
   publicSectionTitle: {
     color: "white",
     fontSize: "17px",
-    fontWeight: "700",
-    margin: "0 0 20px 0",
+    margin: "0 0 20px",
   },
 
   publicInfoRow: {
@@ -1032,7 +1426,6 @@ const styles = {
   publicLabel: {
     color: "#94a3b8",
     fontSize: "14px",
-    fontWeight: "500",
   },
 
   publicValue: {
@@ -1043,43 +1436,38 @@ const styles = {
   },
 
   bloodBadge: {
-    background: "rgba(239, 68, 68, 0.12)",
+    background:
+      "rgba(239, 68, 68, 0.12)",
     color: "#f87171",
     padding: "4px 14px",
     borderRadius: "100px",
-    border: "1px solid rgba(239, 68, 68, 0.25)",
-    fontWeight: "700",
   },
 
   publicDivider: {
     height: "1px",
-    background: "rgba(255, 255, 255, 0.06)",
+    background:
+      "rgba(255, 255, 255, 0.06)",
   },
 
   publicCallButton: {
     display: "block",
-    background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
+    background:
+      "linear-gradient(135deg, #dc2626, #b91c1c)",
     color: "white",
     padding: "16px",
     borderRadius: "14px",
     textDecoration: "none",
     fontWeight: "700",
-    fontSize: "16px",
     textAlign: "center",
     marginTop: "20px",
-    boxShadow: "0 8px 24px rgba(220, 38, 38, 0.25)",
-    transition: "all 0.3s ease",
   },
 
-  // ======= RESPONDER LOGIN SECTION =======
   responderLoginSection: {
-    background: "rgba(255, 255, 255, 0.03)",
-    backdropFilter: "blur(20px)",
+    background:
+      "rgba(255, 255, 255, 0.03)",
     borderRadius: "20px",
     padding: "28px",
-    border: "1px solid rgba(255, 255, 255, 0.06)",
     textAlign: "center",
-    marginTop: "8px",
   },
 
   lockIcon: {
@@ -1091,18 +1479,17 @@ const styles = {
     color: "#e2e8f0",
     fontSize: "16px",
     fontWeight: "600",
-    margin: "0 0 6px 0",
   },
 
   responderLoginSubtext: {
     color: "#64748b",
     fontSize: "13px",
-    margin: "0 0 20px 0",
     lineHeight: "1.5",
   },
 
   responderLoginButton: {
-    background: "linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)",
+    background:
+      "linear-gradient(135deg, #1d4ed8, #7c3aed)",
     color: "white",
     border: "none",
     padding: "14px 32px",
@@ -1110,31 +1497,26 @@ const styles = {
     fontSize: "15px",
     fontWeight: "700",
     cursor: "pointer",
-    boxShadow: "0 8px 24px rgba(29, 78, 216, 0.3)",
-    transition: "all 0.3s ease",
   },
 
-  // Login Form
   loginFormTitle: {
     color: "white",
     fontSize: "18px",
-    fontWeight: "700",
-    margin: "0 0 6px 0",
   },
 
   loginFormSubtitle: {
     color: "#64748b",
     fontSize: "13px",
-    margin: "0 0 20px 0",
   },
 
   loginErrorBox: {
-    background: "rgba(239, 68, 68, 0.1)",
-    border: "1px solid rgba(239, 68, 68, 0.3)",
+    background:
+      "rgba(239, 68, 68, 0.1)",
+    border:
+      "1px solid rgba(239, 68, 68, 0.3)",
     color: "#f87171",
     borderRadius: "12px",
     padding: "12px 16px",
-    fontSize: "13px",
     marginBottom: "16px",
     textAlign: "left",
   },
@@ -1153,7 +1535,6 @@ const styles = {
     display: "block",
     color: "#94a3b8",
     fontSize: "13px",
-    fontWeight: "500",
     marginBottom: "6px",
   },
 
@@ -1161,64 +1542,34 @@ const styles = {
     width: "100%",
     padding: "12px 16px",
     borderRadius: "12px",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
-    background: "rgba(255, 255, 255, 0.04)",
+    border:
+      "1px solid rgba(255, 255, 255, 0.1)",
+    background:
+      "rgba(255, 255, 255, 0.04)",
     color: "white",
-    fontSize: "14px",
-    outline: "none",
-    transition: "border-color 0.3s ease",
     boxSizing: "border-box",
-    fontFamily: "'Inter', 'Poppins', sans-serif",
   },
 
   submitButton: {
-    background: "linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)",
+    background:
+      "linear-gradient(135deg, #1d4ed8, #7c3aed)",
     color: "white",
     border: "none",
     padding: "14px",
     borderRadius: "14px",
-    fontSize: "15px",
     fontWeight: "700",
     cursor: "pointer",
-    boxShadow: "0 8px 24px rgba(29, 78, 216, 0.3)",
-    transition: "all 0.3s ease",
-    marginTop: "4px",
   },
 
   cancelButton: {
     background: "transparent",
     color: "#64748b",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
+    border:
+      "1px solid rgba(255, 255, 255, 0.08)",
     padding: "12px",
     borderRadius: "12px",
-    fontSize: "14px",
-    fontWeight: "500",
     cursor: "pointer",
-    transition: "all 0.3s ease",
   },
 };
-
-// =========================================
-// GLOBAL ANIMATION STYLES
-// =========================================
-
-const animationStyles = document.createElement("style");
-animationStyles.textContent = `
-  @keyframes loading {
-    0% { transform: translateX(-100%); }
-    50% { transform: translateX(150%); }
-    100% { transform: translateX(-100%); }
-  }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-  }
-`;
-
-if (!document.getElementById("emergency-page-animations")) {
-  animationStyles.id = "emergency-page-animations";
-  document.head.appendChild(animationStyles);
-}
 
 export default EmergencyPage;

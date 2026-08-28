@@ -14,14 +14,17 @@ const ResponderEmergencyPage = () => {
     const fetchEmergencyData = async () => {
       try {
         setLoading(true);
+        setError("");
 
         const response = await api.get(
           `/responder/emergency/${userId}`
         );
 
+        console.log("RESPONDER EMERGENCY DATA:", response.data);
+
         setData(response.data);
       } catch (error) {
-        console.error(error);
+        console.error("Emergency API Error:", error);
 
         setError(
           error.response?.data?.message ||
@@ -35,6 +38,10 @@ const ResponderEmergencyPage = () => {
     fetchEmergencyData();
   }, [userId]);
 
+  // ==============================
+  // LOADING
+  // ==============================
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -44,6 +51,10 @@ const ResponderEmergencyPage = () => {
       </div>
     );
   }
+
+  // ==============================
+  // ERROR
+  // ==============================
 
   if (error) {
     return (
@@ -65,11 +76,14 @@ const ResponderEmergencyPage = () => {
     return null;
   }
 
+  // IMPORTANT:
+  // documents is now included
   const {
     patient,
     medicalProfile,
     emergencyContacts,
     insurance,
+    documents,
   } = data;
 
   return (
@@ -77,7 +91,9 @@ const ResponderEmergencyPage = () => {
 
       <div className="max-w-5xl mx-auto">
 
-        {/* HEADER */}
+        {/* =====================================
+            HEADER
+        ===================================== */}
 
         <div className="bg-blue-600 text-white rounded-2xl p-7 shadow-lg">
 
@@ -95,7 +111,10 @@ const ResponderEmergencyPage = () => {
 
         </div>
 
-        {/* PATIENT */}
+
+        {/* =====================================
+            PATIENT INFORMATION
+        ===================================== */}
 
         <div className="bg-white rounded-2xl shadow mt-6 p-6">
 
@@ -107,24 +126,27 @@ const ResponderEmergencyPage = () => {
 
             <Info
               label="Full Name"
-              value={patient.fullName}
+              value={patient?.fullName}
             />
 
             <Info
               label="Phone"
-              value={patient.phone}
+              value={patient?.phone}
             />
 
             <Info
               label="Email"
-              value={patient.email}
+              value={patient?.email}
             />
 
           </div>
 
         </div>
 
-        {/* MEDICAL PROFILE */}
+
+        {/* =====================================
+            MEDICAL PROFILE
+        ===================================== */}
 
         <div className="bg-white rounded-2xl shadow mt-6 p-6">
 
@@ -133,6 +155,7 @@ const ResponderEmergencyPage = () => {
           </h2>
 
           {medicalProfile ? (
+
             <div className="grid md:grid-cols-2 gap-5 mt-5">
 
               <Info
@@ -190,15 +213,21 @@ const ResponderEmergencyPage = () => {
               />
 
             </div>
+
           ) : (
+
             <p className="text-gray-500 mt-4">
               No medical profile available.
             </p>
+
           )}
 
         </div>
 
-        {/* EMERGENCY CONTACTS */}
+
+        {/* =====================================
+            EMERGENCY CONTACTS
+        ===================================== */}
 
         <div className="bg-white rounded-2xl shadow mt-6 p-6">
 
@@ -207,52 +236,79 @@ const ResponderEmergencyPage = () => {
           </h2>
 
           {emergencyContacts?.length > 0 ? (
+
             <div className="space-y-4 mt-5">
 
               {emergencyContacts.map((contact) => (
+
                 <div
                   key={contact._id}
                   className="border rounded-xl p-4"
                 >
+
                   <p className="font-bold">
-                    {contact.name}
+                    {contact.contactName ||
+                      contact.name ||
+                      "Not provided"}
                   </p>
 
                   <p className="text-gray-600">
-                    {contact.relationship}
+                    {contact.relationship ||
+                      "Not provided"}
                   </p>
 
                   <p className="text-blue-600 mt-1">
-                    {contact.phone}
+                    {contact.phone ||
+                      "Not provided"}
                   </p>
+
+                  {contact.phone && (
+                    <a
+                      href={`tel:${contact.phone}`}
+                      className="inline-block mt-3 bg-red-600 text-white px-5 py-2 rounded-lg"
+                    >
+                      📞 Call Contact
+                    </a>
+                  )}
+
                 </div>
+
               ))}
 
             </div>
+
           ) : (
+
             <p className="text-gray-500 mt-4">
               No emergency contacts available.
             </p>
+
           )}
 
         </div>
 
-        {/* INSURANCE */}
 
-        <div className="bg-white rounded-2xl shadow mt-6 p-6 mb-10">
+        {/* =====================================
+            INSURANCE
+        ===================================== */}
+
+        <div className="bg-white rounded-2xl shadow mt-6 p-6">
 
           <h2 className="text-xl font-bold">
             Insurance Information
           </h2>
 
           {insurance?.length > 0 ? (
+
             <div className="space-y-4 mt-5">
 
               {insurance.map((item) => (
+
                 <div
                   key={item._id}
                   className="border rounded-xl p-4"
                 >
+
                   <p className="font-bold">
                     {item.provider}
                   </p>
@@ -260,14 +316,110 @@ const ResponderEmergencyPage = () => {
                   <p className="text-gray-600">
                     Policy: {item.policyNumber}
                   </p>
+
                 </div>
+
               ))}
 
             </div>
+
           ) : (
+
             <p className="text-gray-500 mt-4">
               No insurance information available.
             </p>
+
+          )}
+
+        </div>
+
+
+        {/* =====================================
+            MEDICAL DOCUMENTS
+        ===================================== */}
+
+        <div className="bg-white rounded-2xl shadow mt-6 p-6 mb-10">
+
+          <div className="flex items-center justify-between">
+
+            <h2 className="text-xl font-bold">
+              📄 Medical Documents
+            </h2>
+
+            <span className="text-sm text-green-600 font-semibold">
+              Approved Documents
+            </span>
+
+          </div>
+
+
+          {documents?.length > 0 ? (
+
+            <div className="space-y-4 mt-5">
+
+              {documents.map((document) => (
+
+                <div
+                  key={document._id}
+                  className="border rounded-xl p-5 bg-slate-50"
+                >
+
+                  {/* DOCUMENT NAME */}
+
+                  <p className="font-bold text-lg">
+                    {document.fileName}
+                  </p>
+
+
+                  {/* DOCUMENT TYPE */}
+
+                  <p className="text-gray-600 mt-1">
+                    Type:{" "}
+                    {formatDocumentType(
+                      document.documentType
+                    )}
+                  </p>
+
+
+                  {/* STATUS */}
+
+                  <p className="text-green-600 font-semibold mt-2">
+                    ✓ Approved
+                  </p>
+
+
+                  {/* OPEN DOCUMENT */}
+
+                  <a
+                    href={document.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block mt-4 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
+                  >
+                    📄 View Document
+                  </a>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          ) : (
+
+            <div className="mt-5 bg-yellow-50 border border-yellow-200 rounded-xl p-5">
+
+              <p className="font-semibold text-yellow-800">
+                No approved medical documents available.
+              </p>
+
+              <p className="text-sm text-yellow-700 mt-1">
+                Documents will appear here after they are
+                approved by the administrator.
+              </p>
+
+            </div>
+
           )}
 
         </div>
@@ -277,6 +429,11 @@ const ResponderEmergencyPage = () => {
     </div>
   );
 };
+
+
+// =====================================
+// INFO COMPONENT
+// =====================================
 
 const Info = ({ label, value }) => {
   return (
@@ -293,5 +450,28 @@ const Info = ({ label, value }) => {
     </div>
   );
 };
+
+
+// =====================================
+// DOCUMENT TYPE FORMATTER
+// =====================================
+
+const formatDocumentType = (type) => {
+
+  if (!type) {
+    return "Other";
+  }
+
+  const types = {
+    professional_id: "Professional ID",
+    medical_license: "Medical License",
+    police_id: "Police ID",
+    government_id: "Government ID",
+    other: "Other",
+  };
+
+  return types[type] || type;
+};
+
 
 export default ResponderEmergencyPage;

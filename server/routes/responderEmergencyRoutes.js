@@ -8,6 +8,7 @@ import {
   markResponding,
   completeEmergency,
   getMyResponses,
+  getEmergencyInformation,
 } from "../controllers/responderEmergencyController.js";
 
 const router = express.Router();
@@ -50,6 +51,12 @@ router.put(
 router.put(
   "/complete/:id",
   completeEmergency
+);
+
+router.get(
+  "/:userId",
+  protect,
+  getEmergencyInformation
 );
 
 

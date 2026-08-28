@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import MedicalProfile from "../models/MedicalProfile.js";
 import EmergencyContact from "../models/EmergencyContact.js";
 import Insurance from "../models/Insurance.js";
+import MedicalDocument from "../models/MedicalDocument.js";
 
 export const getEmergencyCard = async (req, res) => {
   try {
@@ -23,12 +24,16 @@ export const getEmergencyCard = async (req, res) => {
     }
 
     // ==========================================
-    // GET BASIC INFORMATION
+    // GET MEDICAL PROFILE
     // ==========================================
 
     const profile = await MedicalProfile.findOne({
       user: userId,
     });
+
+    // ==========================================
+    // GET EMERGENCY CONTACT
+    // ==========================================
 
     const contact = await EmergencyContact.findOne({
       user: userId,
@@ -45,7 +50,8 @@ export const getEmergencyCard = async (req, res) => {
       req.user.verificationStatus === "approved";
 
     // ==========================================
-    // BASIC INFORMATION (everyone sees this)
+    // BASIC INFORMATION
+    // EVERYONE CAN SEE THIS
     // ==========================================
 
     const emergencyCard = {
@@ -61,50 +67,94 @@ export const getEmergencyCard = async (req, res) => {
     };
 
     // ==========================================
-    // FULL MEDICAL DETAILS
-    // ONLY FOR VERIFIED RESPONDERS
+    // FULL INFORMATION
+    // ONLY VERIFIED RESPONDERS
     // ==========================================
 
     if (isVerifiedResponder) {
-      // Full medical profile
+
+      // ========================================
+      // FULL MEDICAL PROFILE
+      // ========================================
+
       emergencyCard.medicalProfile = {
         dateOfBirth: profile?.dateOfBirth || null,
+
         gender: profile?.gender || "",
+
         height: profile?.height || 0,
+
         weight: profile?.weight || 0,
+
         allergies: profile?.allergies || "",
+
         medicalConditions:
           profile?.medicalConditions || "",
-        medications: profile?.medications || "",
-        organDonor: profile?.organDonor || false,
-        address: profile?.address || "",
+
+        medications:
+          profile?.medications || "",
+
+        organDonor:
+          profile?.organDonor || false,
+
+        address:
+          profile?.address || "",
       };
 
-      // Patient contact info
+      // ========================================
+      // PATIENT CONTACT INFORMATION
+      // ========================================
+
       emergencyCard.phone = user.phone;
+
       emergencyCard.email = user.email;
 
-      // Insurance
+      // ========================================
+      // INSURANCE
+      // ========================================
+
       const insurance = await Insurance.findOne({
         user: userId,
+      }).sort({
+        createdAt: -1,
       });
 
       emergencyCard.insurance = insurance;
+
+      // ========================================
+      // MEDICAL DOCUMENTS
+      // ========================================
+
+      const documents = await MedicalDocument.find({
+        user: userId,
+      })
+        .select(
+          "_id documentType fileName fileUrl resourceType createdAt"
+        )
+        .sort({
+          createdAt: -1,
+        });
+
+      emergencyCard.documents = documents;
     }
 
     // ==========================================
     // RESPONSE
     // ==========================================
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       emergencyCard,
     });
 
   } catch (error) {
-    console.error(error);
 
-    res.status(500).json({
+    console.error(
+      "GET EMERGENCY CARD ERROR:",
+      error
+    );
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });

@@ -9,7 +9,9 @@ const QRGenerator = ({ onQRReady }) => {
 
   useEffect(() => {
     generateQR();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const generateQR = async () => {
     try {

@@ -1,5 +1,5 @@
-import CountUp from "react-countup";
 import { motion } from "framer-motion";
+
 import {
   Users,
   QrCode,
@@ -73,9 +73,11 @@ const Stats = () => {
                   />
 
                   <h2 className="text-5xl font-bold text-white mt-6">
-                    {item.value}
+                    {item.value.toLocaleString()}
                     {item.suffix}
                   </h2>
+
+
 
                   <p className="text-slate-300 mt-3">
                     {item.title}

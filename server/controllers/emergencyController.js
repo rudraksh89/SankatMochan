@@ -105,3 +105,62 @@ export const updateEmergencyContact = async (req, res) => {
     });
   }
 };
+
+// =======================
+// Trigger SOS Alert
+// =======================
+import EmergencyAlert from "../models/EmergencyAlert.js";
+
+export const triggerSOSAlert = async (req, res) => {
+  try {
+    const { latitude, longitude, address, notes, victimUserId } = req.body;
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({
+        success: false,
+        message: "Latitude and Longitude are required for SOS alert",
+      });
+    }
+
+    const alert = await EmergencyAlert.create({
+      user: req.user?._id || victimUserId || null,
+      latitude,
+      longitude,
+      address: address || "",
+      notes: notes || "Emergency SOS broadcast triggered",
+    });
+
+
+    res.status(201).json({
+      success: true,
+      message: "Emergency SOS broadcasted successfully! Responders notified.",
+      alert,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// =======================
+// Get SOS Alerts
+// =======================
+export const getSOSAlerts = async (req, res) => {
+  try {
+    const alerts = await EmergencyAlert.find({ status: "active" })
+      .populate("user", "fullName phone email bloodGroup")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      alerts,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

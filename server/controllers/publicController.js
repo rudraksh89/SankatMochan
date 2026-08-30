@@ -173,3 +173,42 @@ export const getEmergencyCard = async (req, res) => {
     });
   }
 };
+
+// =====================================================
+// GET AI TRIAGE ADVICE
+// =====================================================
+import { generateAITriageAdvice } from "../services/aiService.js";
+
+export const getAITriageAdvice = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).select("fullName");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const profile = await MedicalProfile.findOne({ user: userId });
+
+    const triageAdvice = await generateAITriageAdvice({
+      fullName: user.fullName,
+      bloodGroup: profile?.bloodGroup || "",
+      allergies: profile?.allergies || "",
+      medicalConditions: profile?.medicalConditions || "",
+      medications: profile?.medications || "",
+      organDonor: profile?.organDonor || false,
+      gender: profile?.gender || "",
+    });
+
+    return res.status(200).json({
+      success: true,
+      triageAdvice,
+    });
+  } catch (error) {
+    console.error("GET AI TRIAGE ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

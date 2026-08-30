@@ -139,10 +139,9 @@ const EmergencyActions = () => {
       }
 
     } catch (error) {
-
-      console.log("Share cancelled");
-
+      console.log("Share cancelled or failed:", error);
     }
+
   };
 
 

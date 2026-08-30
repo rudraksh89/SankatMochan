@@ -15,13 +15,160 @@ const EmergencyPage = () => {
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
 
+  const [aiTriageText, setAiTriageText] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
+
+  const [sosLoading, setSosLoading] = useState(false);
+  const [sosStatus, setSosStatus] = useState("");
+
   useEffect(() => {
     fetchCard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
+  const fetchAITriage = async () => {
+    try {
+      setAiLoading(true);
+      setAiError("");
+      const res = await api.get(`/public/ai-triage/${userId}`);
+      if (res.data.success) {
+        setAiTriageText(res.data.triageAdvice);
+      }
+    } catch (err) {
+      setAiError(err.response?.data?.message || "Failed to generate AI triage advice.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const fetchIPLocationFallback = async () => {
+    try {
+      const response = await fetch("https://ipapi.co/json/");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.latitude && data.longitude) {
+          return {
+            latitude: data.latitude,
+            longitude: data.longitude,
+            locationName: `${data.city || ""}, ${data.region || ""}`.trim() || "Network Location",
+          };
+        }
+      }
+    } catch (e) {
+      console.warn("Primary IP Geolocation API error:", e);
+    }
+
+    try {
+      const response = await fetch("https://ip-api.com/json/");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.lat && data.lon) {
+          return {
+            latitude: data.lat,
+            longitude: data.lon,
+            locationName: `${data.city || ""}, ${data.regionName || ""}`.trim() || "Network Location",
+          };
+        }
+      }
+    } catch (e) {
+      console.warn("Secondary IP Geolocation API error:", e);
+    }
+
+    return { latitude: 28.6139, longitude: 77.2090, locationName: "Emergency Hub" };
+  };
+
+  const sendSOSPayload = async (latitude, longitude, locationType = "GPS", locationName = "") => {
+    try {
+      const token = localStorage.getItem("token");
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      const notes = `SOS Alert triggered (${locationType} Location: ${locationName || "Current Area"})`;
+
+      const res = await api.post(
+        "/emergency/sos",
+        { latitude, longitude, victimUserId: userId, notes },
+        config
+      );
+
+      if (res.data.success) {
+        const label = locationType === "Exact GPS" ? "Live GPS" : `Location (${locationName || "Area"})`;
+        setSosStatus(`🚨 SOS Broadcasted! ${label}: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+      }
+    } catch (err) {
+      setSosStatus(err.response?.data?.message || "SOS Broadcast failed.");
+    } finally {
+      setSosLoading(false);
+    }
+  };
+
+  const triggerSOS = async () => {
+    setSosLoading(true);
+    setSosStatus("Detecting location...");
+
+    if (!navigator.geolocation) {
+      const ipLoc = await fetchIPLocationFallback();
+      await sendSOSPayload(ipLoc.latitude, ipLoc.longitude, "Network IP", ipLoc.locationName);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        console.log("GPS Location acquired:", latitude, longitude);
+        await sendSOSPayload(latitude, longitude, "Exact GPS", "Live Coordinates");
+      },
+      async (err) => {
+        console.warn("Geolocation permission/hardware notice (Code " + err.code + "):", err.message);
+        setSosStatus("Using Network IP Geolocation...");
+        const ipLoc = await fetchIPLocationFallback();
+        await sendSOSPayload(ipLoc.latitude, ipLoc.longitude, "Network IP", ipLoc.locationName);
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
+  };
+
+
+
+
+
   // =====================================================
-  // FETCH EMERGENCY CARD
-  // =====================================================
+  const parseOfflinePayload = () => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const dataParam = searchParams.get("data");
+      if (dataParam) {
+        let decodedStr = "";
+        try {
+          decodedStr = atob(dataParam.replace(/-/g, "+").replace(/_/g, "/"));
+        } catch (_e) {
+          decodedStr = window.atob ? atob(dataParam) : "";
+        }
+
+        if (decodedStr) {
+          const parsed = JSON.parse(decodedStr);
+          return {
+            fullName: parsed.fn || "Citizen",
+            bloodGroup: parsed.bg || "Unknown",
+            emergencyContact: {
+              contactName: "ICE Contact",
+              phone: parsed.ice || "",
+              relationship: "Emergency Contact",
+            },
+            medicalProfile: {
+              allergies: parsed.al || "None declared",
+              medicalConditions: parsed.mc || "None declared",
+              organDonor: parsed.od || false,
+            },
+            isOfflinePayload: true,
+            accessLevel: "public",
+          };
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to parse offline payload:", err);
+    }
+    return null;
+  };
 
   const fetchCard = async (token = null) => {
     try {
@@ -29,7 +176,6 @@ const EmergencyPage = () => {
       setError("");
 
       const config = {};
-
       if (token) {
         config.headers = {
           Authorization: `Bearer ${token}`,
@@ -37,31 +183,23 @@ const EmergencyPage = () => {
       }
 
       const res = await api.get(`/public/${userId}`, config);
-
-      console.log("=================================");
-      console.log("PUBLIC EMERGENCY CARD:");
-      console.log(res.data);
-      console.log("EMERGENCY CARD:");
-      console.log(res.data.emergencyCard);
-      console.log("INSURANCE:");
-      console.log(res.data.emergencyCard?.insurance);
-      console.log("DOCUMENTS:");
-      console.log(res.data.emergencyCard?.documents);
-      console.log("=================================");
-
       setCard(res.data.emergencyCard);
-
     } catch (err) {
-      console.error("Emergency card error:", err);
-
-      setError(
-        err.response?.data?.message ||
-          "Unable to load emergency card"
-      );
+      console.error("Emergency card fetch error:", err);
+      const offlineCard = parseOfflinePayload();
+      if (offlineCard) {
+        setCard(offlineCard);
+      } else {
+        setError(
+          err.response?.data?.message ||
+            "Unable to load emergency card (No network & no offline payload)"
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
+
 
   // =====================================================
   // RESPONDER LOGIN
@@ -632,7 +770,15 @@ const EmergencyPage = () => {
     <div style={styles.pagePublic}>
       <div style={styles.publicContainer}>
 
+        {card.isOfflinePayload && (
+          <div style={{ background: "#fef3c7", border: "1px solid #f59e0b", color: "#92400e", padding: "10px 16px", borderRadius: "12px", textAlign: "center", fontWeight: "bold", fontSize: "14px", marginBottom: "16px" }}>
+            ⚡ OFFLINE EMERGENCY PAYLOAD (Scanned without Internet)
+          </div>
+        )}
+
         <div style={styles.publicHeader}>
+
+
 
           <div style={styles.emergencyPulse}>
             <span style={styles.emergencyIcon}>
@@ -683,6 +829,73 @@ const EmergencyPage = () => {
           </div>
 
         </div>
+
+        {/* ONE-TAP SOS ALERT BROADCAST */}
+
+        <div style={{ ...styles.publicCard, border: "2px solid #ef4444", background: "rgba(239, 68, 68, 0.05)", marginTop: "16px" }}>
+          <h2 style={{ ...styles.publicSectionTitle, color: "#dc2626", display: "flex", alignItems: "center", gap: "8px" }}>
+            🚨 One-Tap Emergency SOS Broadcast
+          </h2>
+          <p style={{ fontSize: "14px", color: "#475569", marginBottom: "12px" }}>
+            Broadcast live GPS position to emergency contacts & verified responders nearby.
+          </p>
+          <button
+            onClick={triggerSOS}
+            disabled={sosLoading}
+            style={{
+              width: "100%",
+              padding: "14px",
+              backgroundColor: "#dc2626",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "12px",
+              fontWeight: "bold",
+              fontSize: "16px",
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(220, 38, 38, 0.3)",
+              transition: "all 0.2s ease"
+            }}
+          >
+            {sosLoading ? "Transmitting SOS & GPS Location..." : "🚨 DISPATCH SOS ALERT NOW"}
+          </button>
+          {sosStatus && (
+            <p style={{ marginTop: "10px", fontSize: "13px", color: "#991b1b", fontWeight: "600", textAlign: "center" }}>
+              {sosStatus}
+            </p>
+          )}
+        </div>
+
+        {/* AI TRIAGE ASSISTANT */}
+        <div style={{ ...styles.publicCard, border: "1px solid #3b82f6", background: "rgba(59, 130, 246, 0.03)", marginTop: "16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+            <h2 style={{ ...styles.publicSectionTitle, color: "#1d4ed8", margin: 0 }}>
+              🤖 AI Emergency Triage Guidance
+            </h2>
+            <button
+              onClick={fetchAITriage}
+              disabled={aiLoading}
+              style={{
+                padding: "8px 16px",
+                backgroundColor: "#2563eb",
+                color: "#fff",
+                border: "none",
+                borderRadius: "8px",
+                fontWeight: "600",
+                fontSize: "13px",
+                cursor: "pointer"
+              }}
+            >
+              {aiLoading ? "Analyzing..." : "Generate AI Advice"}
+            </button>
+          </div>
+          {aiError && <p style={{ color: "#dc2626", fontSize: "13px" }}>{aiError}</p>}
+          {aiTriageText && (
+            <div style={{ background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "10px", padding: "12px", whiteSpace: "pre-wrap", fontFamily: "monospace", fontSize: "13px", color: "#1e293b" }}>
+              {aiTriageText}
+            </div>
+          )}
+        </div>
+
 
         {/* EMERGENCY CONTACT */}
 

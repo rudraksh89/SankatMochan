@@ -7,6 +7,8 @@ import {
   updateAccount,
   changePassword,
   deleteAccount,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/authController.js";
 
 import protect from "../middleware/authMiddleware.js";
@@ -15,13 +17,12 @@ const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", login);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 router.get("/me", protect, getMe);
-
 router.put("/update", protect, updateAccount);
-
 router.put("/change-password", protect, changePassword);
-
 router.delete("/delete-account", protect, deleteAccount);
 
 export default router;

@@ -10,15 +10,28 @@ import qrRoutes from "./routes/qrRoutes.js";
 import publicRoutes from "./routes/publicRoutes.js";
 import verificationRoutes from "./routes/verificationRoutes.js";
 import responderEmergencyRoutes from "./routes/responderEmergencyRoutes.js";
+import errorMiddleware from "./middleware/errorMiddleware.js";
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://172.20.10.4:5173",
-    ],
+    origin: (origin, callback) => {
+      // allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin) || origin.startsWith("http://localhost:") || origin.startsWith("http://192.168.") || origin.startsWith("http://172.")) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Fallback allow for development flexibility
+    },
+    credentials: true,
   })
 );
 
@@ -34,10 +47,7 @@ app.use("/api/documents", documentRoutes);
 app.use("/api/qr", qrRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/verification", verificationRoutes);
-//app.use("/api/responder/emergency",responderEmergencyRoutes);
-app.use("/api/responder/emergency",responderEmergencyRoutes);
-
-
+app.use("/api/responder/emergency", responderEmergencyRoutes);
 
 app.get("/", (req, res) => {
   res.json({
@@ -45,5 +55,8 @@ app.get("/", (req, res) => {
     message: "Welcome to Sankat Mochan API 🚑",
   });
 });
+
+// Centralized error handler middleware
+app.use(errorMiddleware);
 
 export default app;

@@ -2,6 +2,8 @@ import { Routes, Route } from "react-router-dom";
 
 import Home from "../pages/Home";
 import Login from "../pages/Login";
+import ForgotPassword from "../pages/ForgotPassword";
+import VerifyOTP from "../pages/VerifyOTP";
 import CitizenDashboard from "../pages/CitizenDashboard";
 import MedicalProfile from "../pages/MedicalProfile";
 import QRPage from "../pages/QRPage";
@@ -19,6 +21,8 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/verify-otp" element={<VerifyOTP />} />
       <Route path="/dashboard" element={<CitizenDashboard />}/>
       <Route path="/dashboard/profile" element={<MedicalProfile />}/>
       <Route path="/dashboard/qr" element={<QRPage/>}/>
@@ -33,7 +37,6 @@ const AppRoutes = () => {
         </AdminRoute>
       }/>
       <Route path="/dashboard/responder/emergency/:userId" element={<ResponderEmergencyPage />}/>
-
     </Routes>
   );
 };

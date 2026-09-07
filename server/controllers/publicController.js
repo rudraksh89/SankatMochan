@@ -39,13 +39,9 @@ export const getEmergencyCard = async (req, res) => {
     // EMERGENCY CONTACT
     // =================================================
 
-    const contact = await EmergencyContact.findOne({
+    const contacts = await EmergencyContact.find({
       user: userId,
-    });
-
-    // =================================================
-    // CHECK VERIFIED RESPONDER
-    // =================================================
+    }).sort({ isPrimary: -1, createdAt: 1 });
 
     const isVerifiedResponder =
       req.user &&
@@ -53,18 +49,11 @@ export const getEmergencyCard = async (req, res) => {
       req.user.isVerified === true &&
       req.user.verificationStatus === "approved";
 
-    // =================================================
-    // BASIC INFORMATION
-    // EVERYONE CAN SEE
-    // =================================================
-
     const emergencyCard = {
       fullName: user.fullName,
-
       bloodGroup: profile?.bloodGroup || "",
-
-      emergencyContact: contact,
-
+      emergencyContact: contacts[0] || null,
+      emergencyContacts: contacts,
       accessLevel: isVerifiedResponder
         ? "verified_responder"
         : "public",

@@ -6,26 +6,39 @@ import EmergencyContact from "../models/EmergencyContact.js";
 
 export const createEmergencyContact = async (req, res) => {
   try {
-    const existing = await EmergencyContact.findOne({
+    const count = await EmergencyContact.countDocuments({
       user: req.user._id,
     });
 
-    if (existing) {
+    if (count >= 5) {
       return res.status(400).json({
         success: false,
-        message: "Emergency contact already exists",
+        message: "Maximum 5 emergency contacts allowed per profile",
       });
     }
 
+    const isFirst = count === 0;
+
     const contact = await EmergencyContact.create({
       user: req.user._id,
+      isPrimary: isFirst || req.body.isPrimary || false,
       ...req.body,
     });
+
+    if (req.body.isPrimary && !isFirst) {
+      await EmergencyContact.updateMany(
+        { user: req.user._id, _id: { $ne: contact._id } },
+        { isPrimary: false }
+      );
+    }
+
+    const contacts = await EmergencyContact.find({ user: req.user._id }).sort({ isPrimary: -1, createdAt: 1 });
 
     res.status(201).json({
       success: true,
       message: "Emergency contact created successfully",
       contact,
+      contacts,
     });
   } catch (error) {
     res.status(500).json({
@@ -36,26 +49,18 @@ export const createEmergencyContact = async (req, res) => {
 };
 
 // =======================
-// Get Emergency Contact
+// Get Emergency Contacts
 // =======================
 
 export const getEmergencyContact = async (req, res) => {
   try {
-    const contact = await EmergencyContact.findOne({
+    const contacts = await EmergencyContact.find({
       user: req.user._id,
-    });
-
-    // New user -> return empty array instead of 404
-    if (!contact) {
-      return res.status(200).json({
-        success: true,
-        contacts: [],
-      });
-    }
+    }).sort({ isPrimary: -1, createdAt: 1 });
 
     res.status(200).json({
       success: true,
-      contacts: [contact],
+      contacts,
     });
   } catch (error) {
     res.status(500).json({
@@ -71,32 +76,90 @@ export const getEmergencyContact = async (req, res) => {
 
 export const updateEmergencyContact = async (req, res) => {
   try {
-    let contact = await EmergencyContact.findOne({
-      user: req.user._id,
-    });
+    const contactId = req.params.id || req.body._id;
 
-    // Create if it doesn't exist
-    if (!contact) {
-      contact = await EmergencyContact.create({
+    let contact;
+    if (contactId) {
+      contact = await EmergencyContact.findOne({
+        _id: contactId,
         user: req.user._id,
-        ...req.body,
       });
-
-      return res.status(201).json({
-        success: true,
-        message: "Emergency contact created successfully",
-        contact,
+    } else {
+      contact = await EmergencyContact.findOne({
+        user: req.user._id,
       });
     }
 
-    Object.assign(contact, req.body);
+    // Create if it doesn't exist at all
+    if (!contact) {
+      contact = await EmergencyContact.create({
+        user: req.user._id,
+        isPrimary: true,
+        ...req.body,
+      });
+    } else {
+      Object.assign(contact, req.body);
+      await contact.save();
+    }
 
-    await contact.save();
+    if (req.body.isPrimary) {
+      await EmergencyContact.updateMany(
+        { user: req.user._id, _id: { $ne: contact._id } },
+        { isPrimary: false }
+      );
+    }
+
+    const contacts = await EmergencyContact.find({ user: req.user._id }).sort({ isPrimary: -1, createdAt: 1 });
 
     res.status(200).json({
       success: true,
       message: "Emergency contact updated successfully",
       contact,
+      contacts,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// =======================
+// Delete Emergency Contact
+// =======================
+
+export const deleteEmergencyContact = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const contact = await EmergencyContact.findOneAndDelete({
+      _id: id,
+      user: req.user._id,
+    });
+
+    if (!contact) {
+      return res.status(404).json({
+        success: false,
+        message: "Emergency contact not found",
+      });
+    }
+
+    // If deleted contact was primary, make the first remaining contact primary
+    if (contact.isPrimary) {
+      const remaining = await EmergencyContact.findOne({ user: req.user._id }).sort({ createdAt: 1 });
+      if (remaining) {
+        remaining.isPrimary = true;
+        await remaining.save();
+      }
+    }
+
+    const contacts = await EmergencyContact.find({ user: req.user._id }).sort({ isPrimary: -1, createdAt: 1 });
+
+    res.status(200).json({
+      success: true,
+      message: "Emergency contact deleted successfully",
+      contacts,
     });
   } catch (error) {
     res.status(500).json({

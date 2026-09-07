@@ -6,7 +6,11 @@ const emergencyContactSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true,
+    },
+
+    isPrimary: {
+      type: Boolean,
+      default: false,
     },
 
     contactName: {

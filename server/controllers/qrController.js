@@ -11,7 +11,10 @@ export const generateQRCode = async (req, res) => {
 
     const user = await User.findById(userId).select("fullName phone");
     const profile = await MedicalProfile.findOne({ user: userId });
-    const contact = await EmergencyContact.findOne({ user: userId });
+    const contacts = await EmergencyContact.find({ user: userId }).sort({ isPrimary: -1, createdAt: 1 });
+
+    const primaryContact = contacts[0];
+    const secondaryContact = contacts[1];
 
     // Compact signed emergency payload for offline scanner reading
     const compactPayload = {
@@ -19,7 +22,9 @@ export const generateQRCode = async (req, res) => {
       bg: profile?.bloodGroup || "",
       al: profile?.allergies || "None",
       mc: profile?.medicalConditions || "None",
-      ice: contact?.phone || user?.phone || "",
+      ice: primaryContact?.phone || user?.phone || "",
+      ice1: primaryContact ? `${primaryContact.contactName} (${primaryContact.relationship}): ${primaryContact.phone}` : "",
+      ice2: secondaryContact ? `${secondaryContact.contactName} (${secondaryContact.relationship}): ${secondaryContact.phone}` : "",
       od: profile?.organDonor || false,
       ts: Date.now(),
     };

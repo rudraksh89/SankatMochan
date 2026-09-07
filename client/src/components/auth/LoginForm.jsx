@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Mail, Lock, ArrowRight, ShieldCheck, HeartPulse } from "lucide-react";
 
 import AuthCard from "./AuthCard";
 import PasswordInput from "./PasswordInput";
@@ -31,8 +32,6 @@ const LoginForm = () => {
       // Save User in Context
       setUser(response.data.user);
 
-      alert(response.data.message);
-
       // Redirect to Dashboard
       navigate("/dashboard");
 
@@ -46,152 +45,116 @@ const LoginForm = () => {
   };
 
   return (
-    <section className="
-      min-h-screen
-      bg-slate-100 dark:bg-slate-950
-      flex items-center justify-center
-      px-5
-      transition-colors duration-300
-    ">
-
+    <section className="flex items-center justify-center w-full">
       <AuthCard>
+        {/* Brand Icon Header */}
+        <div className="flex flex-col items-center text-center">
+          <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-4">
+            <HeartPulse className="text-red-500 text-2xl animate-pulse" />
+          </div>
 
-        {/* Heading */}
-        <h1 className="
-          text-3xl
-          font-bold
-          text-center
-          text-slate-900 dark:text-white
-        ">
-          Welcome Back
-        </h1>
+          <h1 className="text-3xl font-black tracking-tight text-white">
+            Welcome Back
+          </h1>
 
-        <p className="
-          text-gray-500 dark:text-slate-400
-          text-center
-          mt-2
-        ">
-          Login to Sankat Mochan
-        </p>
+          <p className="text-slate-400 text-sm mt-1">
+            Access your Sankat Mochan portal
+          </p>
+        </div>
 
-        <form
-          className="mt-8"
-          onSubmit={handleSubmit}
-        >
-
+        <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           {/* Email */}
-          <label className="
-            font-semibold
-            text-slate-800 dark:text-white
-          ">
-            Email
-          </label>
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              Email Address
+            </label>
 
-          <input
-            type="email"
-            placeholder="Enter Email"
-            className="
-              w-full
-              mt-2
-              rounded-lg
-              border border-gray-300 dark:border-slate-700
-              bg-white dark:bg-slate-800
-              text-slate-900 dark:text-white
-              placeholder:text-gray-400 dark:placeholder:text-slate-500
-              px-4 py-3
-              outline-none
-              focus:border-blue-600
-              focus:ring-2
-              focus:ring-blue-500/20
-              transition
-            "
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <Mail size={18} />
+              </div>
+              <input
+                type="email"
+                placeholder="name@example.com"
+                className="
+                  w-full
+                  pl-10 pr-4 py-3
+                  rounded-xl
+                  border border-slate-800
+                  bg-slate-950/80
+                  text-white
+                  placeholder:text-slate-500
+                  outline-none
+                  focus:border-blue-500
+                  focus:ring-2
+                  focus:ring-blue-500/20
+                  transition-all duration-200
+                  text-sm
+                "
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+          </div>
 
           {/* Password */}
-          <div className="mt-5">
-
-            <label className="
-              font-semibold
-              text-slate-800 dark:text-white
-            ">
-              Password
-            </label>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Password
+              </label>
+              <Link
+                to="/forgot-password"
+                className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition"
+              >
+                Forgot Password?
+              </Link>
+            </div>
 
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-
           </div>
 
-          {/* Forgot Password */}
-          <div className="flex justify-end mt-3">
-
-            <Link
-              to="/forgot-password"
-              className="
-                text-blue-600
-                dark:text-blue-400
-                hover:underline
-              "
-            >
-              Forgot Password?
-            </Link>
-
-          </div>
-
-          {/* Login Button */}
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
             className="
-              w-full
-              mt-6
-              bg-blue-600
-              hover:bg-blue-700
-              text-white
-              py-3
-              rounded-lg
-              font-semibold
-              transition
-              disabled:opacity-50
-              disabled:cursor-not-allowed
+              w-full mt-2 py-3.5 px-6
+              rounded-xl
+              bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600
+              hover:from-blue-500 hover:to-cyan-500
+              text-white font-bold text-sm
+              shadow-lg shadow-blue-600/30
+              transition-all duration-300
+              disabled:opacity-50 disabled:cursor-not-allowed
+              flex items-center justify-center gap-2
+              group
             "
           >
-            {loading ? "Logging In..." : "Login"}
+            <span>{loading ? "Signing In..." : "Sign In to Portal"}</span>
+            {!loading && (
+              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+            )}
           </button>
-
         </form>
 
-        {/* Register */}
-        <p className="
-          text-center
-          mt-6
-          text-slate-600 dark:text-slate-300
-        ">
-          Don't have an account?
-
+        {/* Register Link */}
+        <p className="text-center mt-6 text-sm text-slate-400">
+          Don't have an account yet?{" "}
           <Link
             to="/register"
-            className="
-              text-blue-600
-              dark:text-blue-400
-              ml-2
-              hover:underline
-            "
+            className="font-bold text-blue-400 hover:text-blue-300 transition hover:underline"
           >
-            Register
+            Register Now
           </Link>
-
         </p>
-
       </AuthCard>
-
     </section>
   );
 };
 
-export default LoginForm;
+export default LoginForm;

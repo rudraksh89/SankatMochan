@@ -140,20 +140,45 @@ const EmergencyPage = () => {
         let decodedStr = "";
         try {
           decodedStr = atob(dataParam.replace(/-/g, "+").replace(/_/g, "/"));
-        } catch (_e) {
+        } catch {
           decodedStr = window.atob ? atob(dataParam) : "";
         }
 
         if (decodedStr) {
           const parsed = JSON.parse(decodedStr);
+          const contacts = [];
+          if (parsed.ice1) {
+            const parts = parsed.ice1.split(":");
+            contacts.push({
+              contactName: parts[0]?.trim() || "Primary ICE Contact",
+              phone: parts[1]?.trim() || parsed.ice || "",
+              relationship: "Primary Emergency Contact",
+              isPrimary: true,
+            });
+          } else if (parsed.ice) {
+            contacts.push({
+              contactName: "Primary ICE Contact",
+              phone: parsed.ice,
+              relationship: "Primary Emergency Contact",
+              isPrimary: true,
+            });
+          }
+
+          if (parsed.ice2) {
+            const parts = parsed.ice2.split(":");
+            contacts.push({
+              contactName: parts[0]?.trim() || "Secondary ICE Contact",
+              phone: parts[1]?.trim() || "",
+              relationship: "Secondary Emergency Contact",
+              isPrimary: false,
+            });
+          }
+
           return {
             fullName: parsed.fn || "Citizen",
             bloodGroup: parsed.bg || "Unknown",
-            emergencyContact: {
-              contactName: "ICE Contact",
-              phone: parsed.ice || "",
-              relationship: "Emergency Contact",
-            },
+            emergencyContact: contacts[0] || null,
+            emergencyContacts: contacts,
             medicalProfile: {
               allergies: parsed.al || "None declared",
               medicalConditions: parsed.mc || "None declared",

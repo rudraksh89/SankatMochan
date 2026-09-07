@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import DashboardLayout from "../components/dashboard/DashboardLayout";
 import {
   CheckCircle,
   XCircle,
@@ -12,6 +13,7 @@ import {
   Building2,
   Briefcase,
   CreditCard,
+  AlertTriangle
 } from "lucide-react";
 
 import api from "../api/axios";
@@ -19,38 +21,22 @@ import { useAuth } from "../context/AuthContext";
 
 const AdminVerificationPage = () => {
   const { user } = useAuth();
-
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [reviewingId, setReviewingId] = useState(null);
-
   const [rejectingId, setRejectingId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
-
   const [error, setError] = useState("");
-
-  // =====================================================
-  // GET PENDING VERIFICATIONS
-  // =====================================================
 
   const fetchPendingVerifications = async () => {
     try {
       setLoading(true);
       setError("");
-
-      const response = await api.get(
-        "/verification/admin/pending"
-      );
-
+      const response = await api.get("/verification/admin/pending");
       setDocuments(response.data.documents || []);
     } catch (error) {
       console.error(error);
-
-      setError(
-        error.response?.data?.message ||
-          "Failed to load verification requests"
-      );
+      setError(error.response?.data?.message || "Failed to load verification requests");
     } finally {
       setLoading(false);
     }
@@ -62,51 +48,22 @@ const AdminVerificationPage = () => {
     }
   }, [user]);
 
-  // =====================================================
-  // APPROVE DOCUMENT
-  // =====================================================
-
   const handleApprove = async (documentId) => {
-    const confirmApprove = window.confirm(
-      "Are you sure you want to approve this responder?"
-    );
-
-    if (!confirmApprove) {
-      return;
-    }
+    const confirmApprove = window.confirm("Are you sure you want to approve this responder?");
+    if (!confirmApprove) return;
 
     try {
       setReviewingId(documentId);
-
-      const response = await api.put(
-        `/verification/admin/review/${documentId}`,
-        {
-          action: "approve",
-        }
-      );
-
+      const response = await api.put(`/verification/admin/review/${documentId}`, { action: "approve" });
       alert(response.data.message);
-
-      setDocuments((prev) =>
-        prev.filter(
-          (document) => document._id !== documentId
-        )
-      );
+      setDocuments((prev) => prev.filter((doc) => doc._id !== documentId));
     } catch (error) {
       console.error(error);
-
-      alert(
-        error.response?.data?.message ||
-          "Failed to approve verification"
-      );
+      alert(error.response?.data?.message || "Failed to approve verification");
     } finally {
       setReviewingId(null);
     }
   };
-
-  // =====================================================
-  // REJECT DOCUMENT
-  // =====================================================
 
   const handleReject = async (documentId) => {
     if (!rejectionReason.trim()) {
@@ -116,537 +73,251 @@ const AdminVerificationPage = () => {
 
     try {
       setReviewingId(documentId);
-
-      const response = await api.put(
-        `/verification/admin/review/${documentId}`,
-        {
-          action: "reject",
-          rejectionReason: rejectionReason.trim(),
-        }
-      );
-
+      const response = await api.put(`/verification/admin/review/${documentId}`, {
+        action: "reject",
+        rejectionReason: rejectionReason.trim(),
+      });
       alert(response.data.message);
-
-      setDocuments((prev) =>
-        prev.filter(
-          (document) => document._id !== documentId
-        )
-      );
-
+      setDocuments((prev) => prev.filter((doc) => doc._id !== documentId));
       setRejectingId(null);
       setRejectionReason("");
     } catch (error) {
       console.error(error);
-
-      alert(
-        error.response?.data?.message ||
-          "Failed to reject verification"
-      );
+      alert(error.response?.data?.message || "Failed to reject verification");
     } finally {
       setReviewingId(null);
     }
   };
 
-  // =====================================================
-  // NOT ADMIN
-  // =====================================================
-
   if (user?.role !== "admin") {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-md p-10 text-center">
-          <ShieldCheck
-            size={50}
-            className="mx-auto text-red-500"
-          />
-
-          <h1 className="text-2xl font-bold mt-5">
-            Access Denied
-          </h1>
-
-          <p className="text-gray-500 mt-2">
-            Only administrators can access responder
-            verification requests.
-          </p>
+      <DashboardLayout>
+        <div className="max-w-4xl mx-auto py-12">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-10 text-center">
+            <ShieldCheck size={50} className="mx-auto text-rose-500 mb-4" />
+            <h1 className="text-2xl font-bold text-white">Access Denied</h1>
+            <p className="text-slate-400 text-sm mt-2">
+              Only administrators can access responder verification requests.
+            </p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
-
-  // =====================================================
-  // LOADING
-  // =====================================================
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2
-            size={40}
-            className="animate-spin mx-auto text-blue-600"
-          />
-
-          <p className="mt-4 text-gray-500">
-            Loading verification requests...
-          </p>
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-400 space-y-3">
+          <Loader2 size={36} className="animate-spin text-purple-500" />
+          <p className="text-sm font-medium">Fetching responder verification queue...</p>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
-  // =====================================================
-  // PAGE
-  // =====================================================
-
   return (
-    <div className="max-w-6xl mx-auto">
-
-      {/* HEADER */}
-
-      <div className="bg-white rounded-2xl shadow-md p-8">
-
-        <div className="flex items-center gap-4">
-
-          <div className="p-3 bg-blue-100 rounded-xl">
-            <ShieldCheck
-              size={32}
-              className="text-blue-600"
-            />
+    <DashboardLayout>
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* HEADER */}
+        <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+              <ShieldCheck size={28} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white tracking-tight">
+                Responder Verification Portal
+              </h1>
+              <p className="text-slate-400 text-sm mt-0.5">
+                Review credential submissions to grant medical responder privileges.
+              </p>
+            </div>
           </div>
 
-          <div>
-            <h1 className="text-3xl font-bold">
-              Responder Verification
-            </h1>
+          <div className="px-4 py-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold flex items-center gap-2">
+            <span>Pending Queue:</span>
+            <span className="text-sm font-black text-amber-400">{documents.length}</span>
+          </div>
+        </div>
 
-            <p className="text-gray-500 mt-1">
-              Review and verify emergency responder
-              credentials.
+        {/* ERROR */}
+        {error && (
+          <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-5 text-rose-300 space-y-3">
+            <p className="font-bold text-sm">{error}</p>
+            <button
+              onClick={fetchPendingVerifications}
+              className="px-4 py-2 rounded-xl bg-rose-600 text-white font-semibold text-xs"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {/* EMPTY QUEUE */}
+        {!error && documents.length === 0 && (
+          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-12 text-center">
+            <CheckCircle size={55} className="mx-auto text-emerald-400 mb-4" />
+            <h2 className="text-2xl font-bold text-white">Verification Queue Empty</h2>
+            <p className="text-slate-400 text-sm mt-2">
+              There are currently no pending responder document requests.
             </p>
           </div>
+        )}
 
-        </div>
+        {/* PENDING DOCUMENTS GRID */}
+        <div className="space-y-6">
+          {documents.map((doc) => {
+            const responder = doc.user;
+            const isReviewing = reviewingId === doc._id;
+            const isRejecting = rejectingId === doc._id;
 
-        {/* COUNT */}
-
-        <div className="mt-6 inline-flex items-center gap-2 bg-yellow-50 border border-yellow-200 px-4 py-2 rounded-xl">
-
-          <span className="font-semibold text-yellow-800">
-            Pending Requests:
-          </span>
-
-          <span className="font-bold text-yellow-900">
-            {documents.length}
-          </span>
-
-        </div>
-
-      </div>
-
-      {/* ERROR */}
-
-      {error && (
-        <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-5">
-
-          <p className="font-semibold text-red-800">
-            Error
-          </p>
-
-          <p className="text-red-700 mt-1">
-            {error}
-          </p>
-
-          <button
-            onClick={fetchPendingVerifications}
-            className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
-          >
-            Try Again
-          </button>
-
-        </div>
-      )}
-
-      {/* EMPTY */}
-
-      {!error && documents.length === 0 && (
-        <div className="mt-6 bg-white rounded-2xl shadow-md p-12 text-center">
-
-          <CheckCircle
-            size={55}
-            className="mx-auto text-green-500"
-          />
-
-          <h2 className="text-2xl font-bold mt-5">
-            No Pending Requests
-          </h2>
-
-          <p className="text-gray-500 mt-2">
-            There are currently no responder verification
-            requests waiting for review.
-          </p>
-
-        </div>
-      )}
-
-      {/* DOCUMENTS */}
-
-      <div className="mt-6 space-y-6">
-
-        {documents.map((document) => {
-
-          const responder = document.user;
-
-          const isReviewing =
-            reviewingId === document._id;
-
-          const isRejecting =
-            rejectingId === document._id;
-
-          return (
-            <div
-              key={document._id}
-              className="bg-white rounded-2xl shadow-md overflow-hidden"
-            >
-
-              {/* CARD HEADER */}
-
-              <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-
-                <div className="flex items-center gap-4">
-
-                  <div className="p-3 bg-blue-100 rounded-xl">
-                    <User
-                      size={28}
-                      className="text-blue-600"
-                    />
+            return (
+              <div
+                key={doc._id}
+                className="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl overflow-hidden shadow-xl"
+              >
+                {/* Header */}
+                <div className="p-6 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/40">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold">
+                      {responder?.fullName?.charAt(0) || "R"}
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-white">
+                        {responder?.fullName || "Unknown Responder"}
+                      </h2>
+                      <p className="text-xs text-slate-400">Responder ID Verification Request</p>
+                    </div>
                   </div>
 
-                  <div>
-
-                    <h2 className="text-xl font-bold">
-                      {responder?.fullName ||
-                        "Unknown Responder"}
-                    </h2>
-
-                    <p className="text-sm text-gray-500">
-                      Responder Verification Request
-                    </p>
-
-                  </div>
-
+                  <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold uppercase">
+                    Pending Admin Review
+                  </span>
                 </div>
 
-                <span className="px-4 py-2 rounded-full bg-yellow-100 text-yellow-800 text-sm font-semibold">
-                  Pending
-                </span>
-
-              </div>
-
-              {/* RESPONDER DETAILS */}
-
-              <div className="p-6">
-
-                <h3 className="text-lg font-semibold mb-4">
-                  Responder Information
-                </h3>
-
-                <div className="grid md:grid-cols-2 gap-4">
-
-                  {/* NAME */}
-
-                  <div className="flex gap-3 p-4 bg-gray-50 rounded-xl">
-
-                    <User
-                      size={20}
-                      className="text-gray-500 mt-1"
-                    />
-
-                    <div>
-                      <p className="text-xs text-gray-500">
-                        Full Name
-                      </p>
-
-                      <p className="font-semibold">
-                        {responder?.fullName || "-"}
-                      </p>
-                    </div>
-
+                {/* Details Grid */}
+                <div className="p-6 grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Full Name</span>
+                    <span className="text-sm font-semibold text-white mt-1 block">{responder?.fullName || "-"}</span>
                   </div>
 
-                  {/* EMAIL */}
-
-                  <div className="flex gap-3 p-4 bg-gray-50 rounded-xl">
-
-                    <Mail
-                      size={20}
-                      className="text-gray-500 mt-1"
-                    />
-
-                    <div>
-                      <p className="text-xs text-gray-500">
-                        Email
-                      </p>
-
-                      <p className="font-semibold break-all">
-                        {responder?.email || "-"}
-                      </p>
-                    </div>
-
+                  <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Email</span>
+                    <span className="text-sm font-semibold text-cyan-300 truncate mt-1 block">{responder?.email || "-"}</span>
                   </div>
 
-                  {/* PHONE */}
-
-                  <div className="flex gap-3 p-4 bg-gray-50 rounded-xl">
-
-                    <Phone
-                      size={20}
-                      className="text-gray-500 mt-1"
-                    />
-
-                    <div>
-                      <p className="text-xs text-gray-500">
-                        Phone
-                      </p>
-
-                      <p className="font-semibold">
-                        {responder?.phone || "-"}
-                      </p>
-                    </div>
-
+                  <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Phone</span>
+                    <span className="text-sm font-semibold text-slate-200 mt-1 block">{responder?.phone || "-"}</span>
                   </div>
 
-                  {/* PROFESSION */}
-
-                  <div className="flex gap-3 p-4 bg-gray-50 rounded-xl">
-
-                    <Briefcase
-                      size={20}
-                      className="text-gray-500 mt-1"
-                    />
-
-                    <div>
-                      <p className="text-xs text-gray-500">
-                        Profession
-                      </p>
-
-                      <p className="font-semibold">
-                        {responder?.profession || "-"}
-                      </p>
-                    </div>
-
+                  <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Profession</span>
+                    <span className="text-sm font-semibold text-purple-300 mt-1 block">{responder?.profession || "-"}</span>
                   </div>
 
-                  {/* ORGANIZATION */}
-
-                  <div className="flex gap-3 p-4 bg-gray-50 rounded-xl">
-
-                    <Building2
-                      size={20}
-                      className="text-gray-500 mt-1"
-                    />
-
-                    <div>
-                      <p className="text-xs text-gray-500">
-                        Organization
-                      </p>
-
-                      <p className="font-semibold">
-                        {responder?.organization || "-"}
-                      </p>
-                    </div>
-
+                  <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Organization</span>
+                    <span className="text-sm font-semibold text-slate-200 mt-1 block">{responder?.organization || "-"}</span>
                   </div>
 
-                  {/* PROFESSIONAL ID */}
-
-                  <div className="flex gap-3 p-4 bg-gray-50 rounded-xl">
-
-                    <CreditCard
-                      size={20}
-                      className="text-gray-500 mt-1"
-                    />
-
-                    <div>
-                      <p className="text-xs text-gray-500">
-                        Professional ID
-                      </p>
-
-                      <p className="font-semibold">
-                        {responder?.professionalId || "-"}
-                      </p>
-                    </div>
-
+                  <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Professional ID</span>
+                    <span className="text-sm font-mono font-bold text-emerald-300 mt-1 block">{responder?.professionalId || "-"}</span>
                   </div>
-
                 </div>
 
-              </div>
-
-              {/* DOCUMENT */}
-
-              <div className="px-6 pb-6">
-
-                <h3 className="text-lg font-semibold mb-4">
-                  Submitted Document
-                </h3>
-
-                <div className="border border-gray-200 rounded-xl p-5">
-
-                  <div className="flex items-center justify-between gap-4 flex-wrap">
-
-                    <div className="flex items-center gap-4">
-
-                      <div className="p-3 bg-gray-100 rounded-xl">
-                        <FileText
-                          size={28}
-                          className="text-gray-600"
-                        />
-                      </div>
-
+                {/* Submitted Document Box */}
+                <div className="px-6 pb-6">
+                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center gap-3">
+                      <FileText className="text-blue-400" size={24} />
                       <div>
-
-                        <p className="font-semibold">
-                          {document.fileName}
-                        </p>
-
-                        <p className="text-sm text-gray-500 mt-1">
-                          Type:{" "}
-                          {document.documentType}
-                        </p>
-
+                        <p className="text-xs font-bold text-white uppercase">{doc.documentType}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{doc.fileName}</p>
                       </div>
-
                     </div>
 
                     <a
-                      href={document.fileUrl}
+                      href={doc.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 border border-blue-600 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50"
+                      className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-cyan-300 hover:text-white font-semibold text-xs flex items-center gap-2"
                     >
-                      <ExternalLink size={18} />
-                      View Document
+                      <ExternalLink size={16} />
+                      <span>View Credential Document</span>
                     </a>
-
                   </div>
-
                 </div>
 
-              </div>
-
-              {/* REJECTION FORM */}
-
-              {isRejecting && (
-                <div className="px-6 pb-6">
-
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-5">
-
-                    <h3 className="font-semibold text-red-800">
-                      Rejection Reason
-                    </h3>
-
-                    <textarea
-                      value={rejectionReason}
-                      onChange={(e) =>
-                        setRejectionReason(
-                          e.target.value
-                        )
-                      }
-                      placeholder="Explain why this document is being rejected..."
-                      rows={4}
-                      className="w-full mt-3 border border-red-300 rounded-xl p-3 outline-none focus:ring-2 focus:ring-red-400"
-                    />
-
-                    <div className="flex gap-3 mt-4">
-
-                      <button
-                        onClick={() =>
-                          handleReject(document._id)
-                        }
-                        disabled={isReviewing}
-                        className="bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
-                      >
-
-                        {isReviewing && (
-                          <Loader2
-                            size={18}
-                            className="animate-spin"
-                          />
-                        )}
-
-                        Confirm Rejection
-
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setRejectingId(null);
-                          setRejectionReason("");
-                        }}
-                        disabled={isReviewing}
-                        className="border border-gray-300 px-5 py-2.5 rounded-lg hover:bg-gray-100"
-                      >
-                        Cancel
-                      </button>
-
-                    </div>
-
-                  </div>
-
-                </div>
-              )}
-
-              {/* ACTIONS */}
-
-              {!isRejecting && (
-                <div className="px-6 pb-6 flex gap-4">
-
-                  <button
-                    onClick={() =>
-                      handleApprove(document._id)
-                    }
-                    disabled={isReviewing}
-                    className="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-
-                    {isReviewing && (
-                      <Loader2
-                        size={20}
-                        className="animate-spin"
+                {/* Rejection Form */}
+                {isRejecting && (
+                  <div className="px-6 pb-6">
+                    <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-3">
+                      <h3 className="font-bold text-xs text-rose-300 uppercase tracking-wider">Provide Rejection Reason</h3>
+                      <textarea
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        placeholder="Explain why this document is being rejected..."
+                        rows={3}
+                        className="w-full p-3 rounded-xl border border-rose-500/30 bg-slate-950 text-white text-xs outline-none focus:border-rose-500"
                       />
-                    )}
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => handleReject(doc._id)}
+                          disabled={isReviewing}
+                          className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+                        >
+                          Confirm Rejection
+                        </button>
+                        <button
+                          onClick={() => {
+                            setRejectingId(null);
+                            setRejectionReason("");
+                          }}
+                          className="px-5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 font-semibold text-xs"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                    {!isReviewing && (
-                      <CheckCircle size={20} />
-                    )}
+                {/* Actions */}
+                {!isRejecting && (
+                  <div className="px-6 pb-6 flex gap-4">
+                    <button
+                      onClick={() => handleApprove(doc._id)}
+                      disabled={isReviewing}
+                      className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2"
+                    >
+                      {isReviewing ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={18} />}
+                      <span>Approve Responder</span>
+                    </button>
 
-                    Approve
-
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setRejectingId(document._id);
-                      setRejectionReason("");
-                    }}
-                    disabled={isReviewing}
-                    className="flex-1 border border-red-500 text-red-600 py-3 rounded-xl font-semibold hover:bg-red-50 disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    <XCircle size={20} />
-                    Reject
-                  </button>
-
-                </div>
-              )}
-
-            </div>
-          );
-        })}
-
+                    <button
+                      onClick={() => {
+                        setRejectingId(doc._id);
+                        setRejectionReason("");
+                      }}
+                      disabled={isReviewing}
+                      className="flex-1 py-3 rounded-xl bg-slate-900 hover:bg-rose-600/20 border border-slate-800 hover:border-rose-500/40 text-rose-400 font-bold text-xs flex items-center justify-center gap-2"
+                    >
+                      <XCircle size={18} />
+                      <span>Reject Application</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-
-    </div>
+    </DashboardLayout>
   );
 };
 
-export default AdminVerificationPage;
+export default AdminVerificationPage;

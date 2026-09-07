@@ -4,100 +4,104 @@ import {
   Brain,
   PhoneCall,
   Hospital,
-  ArrowDown,
+  ArrowRight,
+  Sparkles
 } from "lucide-react";
 
 import Container from "../ui/Container";
 import SectionTitle from "../ui/SectionTitle";
-import Card from "../ui/Card";
 
 const steps = [
   {
     icon: ScanLine,
-    title: "QR Code Scanned",
-    desc: "A passerby scans the patient's emergency QR.",
+    title: "1. QR Code Scanned",
+    desc: "First responder or bystander scans victim's wearable QR tag.",
+    badge: "Instant Trigger",
+    color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
   },
   {
     icon: Brain,
-    title: "AI Analyzes Data",
-    desc: "AI summarizes blood group, allergies and diseases.",
+    title: "2. AI Analyzes Vitals",
+    desc: "AI synthesizes blood group, severe allergies, and drug interactions.",
+    badge: "AI Synthesis",
+    color: "text-purple-400 bg-purple-500/10 border-purple-500/20",
   },
   {
     icon: PhoneCall,
-    title: "Emergency Contact",
-    desc: "Family members are notified immediately.",
+    title: "3. Auto Emergency Dispatch",
+    desc: "Family & emergency ICE contacts receive live GPS alert SMS.",
+    badge: "GPS Alert",
+    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
   },
   {
     icon: Hospital,
-    title: "Hospital Prepared",
-    desc: "Doctors receive medical information before arrival.",
+    title: "4. Hospital Triage Alerted",
+    desc: "Paramedics and ICU staff get instant medical summary before arrival.",
+    badge: "Pre-Hospital Care",
+    color: "text-rose-400 bg-rose-500/10 border-rose-500/20",
   },
 ];
 
 const AIDemo = () => {
   return (
-    <section className="py-28 bg-white">
-      <Container>
+    <section id="aidemo" className="py-24 bg-slate-950 relative overflow-hidden">
+      <div className="absolute top-1/2 right-10 w-96 h-96 bg-purple-600/10 rounded-full blur-[140px] pointer-events-none" />
 
+      <Container>
         <SectionTitle
-          title="AI Emergency Response"
-          subtitle="See how Sankat Mochan uses AI to reduce response time during emergencies."
+          badge="Autonomous Triage Pipeline"
+          title="AI Emergency Response Protocol"
+          subtitle="See how Sankat Mochan uses intelligent automated analysis to eliminate critical delays in medical emergencies."
         />
 
-        <div className="grid lg:grid-cols-4 gap-8">
-
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
           {steps.map((step, index) => {
-
             const Icon = step.icon;
 
             return (
-
               <motion.div
                 key={step.title}
-                initial={{ opacity: 0, y: 40 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{
                   duration: 0.5,
-                  delay: index * 0.15,
+                  delay: index * 0.1,
                 }}
                 viewport={{ once: true }}
+                className="relative group"
               >
+                <div className="h-full bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 hover:border-slate-700 hover:bg-slate-900/90 transition-all duration-300 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-5">
+                      <div className={`w-12 h-12 rounded-xl border flex items-center justify-center ${step.color} shadow-lg`}>
+                        <Icon size={24} />
+                      </div>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                        {step.badge}
+                      </span>
+                    </div>
 
-                <Card className="p-8 h-full text-center">
+                    <h3 className="text-lg font-bold text-white tracking-tight">
+                      {step.title}
+                    </h3>
 
-                  <div className="mx-auto w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white">
-
-                    <Icon size={30} />
-
+                    <p className="mt-2 text-slate-400 text-sm leading-relaxed">
+                      {step.desc}
+                    </p>
                   </div>
 
-                  <h3 className="text-2xl font-bold mt-6 text-slate-900">
-                    {step.title}
-                  </h3>
-
-                  <p className="mt-4 text-slate-600">
-                    {step.desc}
-                  </p>
-
-                </Card>
-
-                {index !== steps.length - 1 && (
-                  <div className="hidden lg:flex justify-center mt-6">
-                    <ArrowDown className="text-blue-500" />
+                  <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center text-xs text-blue-400 font-semibold gap-1 group-hover:text-cyan-300">
+                    <span>Protocol Phase {index + 1}</span>
+                    <Sparkles size={12} />
                   </div>
-                )}
-
+                </div>
               </motion.div>
-
             );
-
           })}
-
         </div>
-
       </Container>
     </section>
   );
 };
 
-export default AIDemo;
+export default AIDemo;

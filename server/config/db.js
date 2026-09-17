@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
+import seedAdmin from "./seedAdmin.js";
 
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
 
     console.log("✅ MongoDB Connected");
+    await seedAdmin();
   } catch (error) {
     console.log("❌ MongoDB Connection Failed");
 

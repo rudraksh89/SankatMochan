@@ -18,6 +18,8 @@ export const register = async (req, res) => {
       profession,
       organization,
       professionalId,
+      adminSecret,
+      role,
     } = req.body;
 
     if (!fullName || !email || !password || !phone) {
@@ -59,6 +61,19 @@ export const register = async (req, res) => {
       }
     }
 
+    // Check for admin role creation via secret
+    const expectedSecret = process.env.ADMIN_SECRET || "SankatMochanAdmin2026";
+    const isAdminRequested = role === "admin" || Boolean(adminSecret);
+
+    if (isAdminRequested && adminSecret !== expectedSecret) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid Admin Secret Key",
+      });
+    }
+
+    const userRole = isAdminRequested ? "admin" : "user";
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
@@ -66,6 +81,7 @@ export const register = async (req, res) => {
       email,
       password: hashedPassword,
       phone,
+      role: userRole,
 
       accountType: finalAccountType,
 
@@ -85,11 +101,13 @@ export const register = async (req, res) => {
           : "",
 
       verificationStatus:
-        finalAccountType === "responder"
+        userRole === "admin"
+          ? "not_required"
+          : finalAccountType === "responder"
           ? "not_submitted"
           : "not_required",
 
-      isVerified: false,
+      isVerified: userRole === "admin" ? true : false,
     });
 
     const token = generateToken(user._id);

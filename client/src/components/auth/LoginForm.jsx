@@ -142,8 +142,28 @@ const LoginForm = () => {
           </button>
         </form>
 
+        {/* Demo Admin Quick Login Helper */}
+        <div className="mt-6 pt-4 border-t border-slate-800/80">
+          <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+            <span className="font-semibold uppercase tracking-wider text-[10px]">Demo Quick Login</span>
+            <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px] font-bold">Admin Portal</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setEmail("admin@sankatmochan.com");
+              setPassword("Admin@123456");
+            }}
+            className="w-full py-2 px-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-purple-500/50 text-slate-300 hover:text-white text-xs font-medium flex items-center justify-between transition-all"
+          >
+            <span>👑 System Admin Login</span>
+            <span className="font-mono text-[11px] text-purple-400">Auto-fill Admin Creds</span>
+          </button>
+        </div>
+
         {/* Register Link */}
-        <p className="text-center mt-6 text-sm text-slate-400">
+        <p className="text-center mt-5 text-sm text-slate-400">
           Don't have an account yet?{" "}
           <Link
             to="/register"

@@ -18,6 +18,7 @@ const RegisterForm = () => {
   const [password, setPassword] = useState("");
 
   const [accountType, setAccountType] = useState("normal");
+  const [adminSecret, setAdminSecret] = useState("");
 
   const [profession, setProfession] = useState("");
   const [organization, setOrganization] = useState("");
@@ -36,7 +37,9 @@ const RegisterForm = () => {
         email,
         phone,
         password,
-        accountType,
+        accountType: accountType === "admin" ? "normal" : accountType,
+        role: accountType === "admin" ? "admin" : "user",
+        adminSecret: accountType === "admin" ? adminSecret : "",
         profession: accountType === "responder" ? profession : "",
         organization: accountType === "responder" ? organization : "",
         professionalId: accountType === "responder" ? professionalId : "",
@@ -154,40 +157,82 @@ const RegisterForm = () => {
               Select Account Type
             </label>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setAccountType("normal")}
-                className={`p-3.5 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between ${
+                className={`p-3 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between ${
                   accountType === "normal"
                     ? "border-blue-500 bg-blue-600/15 text-white shadow-lg shadow-blue-500/10"
                     : "border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm">👤 Citizen</span>
+                  <span className="font-bold text-xs">👤 Citizen</span>
                   {accountType === "normal" && <div className="w-2 h-2 rounded-full bg-blue-400" />}
                 </div>
-                <p className="text-[11px] opacity-70 mt-1">Regular user profile</p>
+                <p className="text-[10px] opacity-70 mt-1">Regular Profile</p>
               </button>
 
               <button
                 type="button"
                 onClick={() => setAccountType("responder")}
-                className={`p-3.5 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between ${
+                className={`p-3 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between ${
                   accountType === "responder"
                     ? "border-cyan-500 bg-cyan-600/15 text-white shadow-lg shadow-cyan-500/10"
                     : "border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm">🛡️ Responder</span>
+                  <span className="font-bold text-xs">🛡️ Responder</span>
                   {accountType === "responder" && <div className="w-2 h-2 rounded-full bg-cyan-400" />}
                 </div>
-                <p className="text-[11px] opacity-70 mt-1">Doctor, EMT, Police</p>
+                <p className="text-[10px] opacity-70 mt-1">Doctor, EMT, Police</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAccountType("admin")}
+                className={`p-3 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between ${
+                  accountType === "admin"
+                    ? "border-purple-500 bg-purple-600/15 text-white shadow-lg shadow-purple-500/10"
+                    : "border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs">👑 Admin</span>
+                  {accountType === "admin" && <div className="w-2 h-2 rounded-full bg-purple-400" />}
+                </div>
+                <p className="text-[10px] opacity-70 mt-1">System Portal</p>
               </button>
             </div>
           </div>
+
+          {/* Admin Fields */}
+          {accountType === "admin" && (
+            <div className="p-4 bg-purple-950/30 border border-purple-800/50 rounded-2xl space-y-3 animate-fadeIn">
+              <div className="flex items-center gap-2 border-b border-purple-800/50 pb-2">
+                <ShieldCheck size={16} className="text-purple-400" />
+                <h3 className="font-bold text-xs text-purple-200 uppercase tracking-wider">
+                  Admin Authorization
+                </h3>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-purple-300 mb-1">
+                  Admin Secret Key
+                </label>
+                <input
+                  type="password"
+                  placeholder="Enter Admin Secret Key"
+                  value={adminSecret}
+                  onChange={(e) => setAdminSecret(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-purple-800/60 bg-slate-950 text-white outline-none focus:border-purple-500 text-sm"
+                  required
+                />
+              </div>
+            </div>
+          )}
 
           {/* Responder Fields */}
           {accountType === "responder" && (

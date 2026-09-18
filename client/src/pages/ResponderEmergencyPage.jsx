@@ -346,8 +346,8 @@ const ResponderEmergencyPage = () => {
               📄 Medical Documents
             </h2>
 
-            <span className="text-sm text-green-600 font-semibold">
-              Approved Documents
+            <span className="text-sm text-blue-600 font-semibold">
+              Patient Records
             </span>
 
           </div>
@@ -383,8 +383,8 @@ const ResponderEmergencyPage = () => {
 
                   {/* STATUS */}
 
-                  <p className="text-green-600 font-semibold mt-2">
-                    ✓ Approved
+                  <p className="text-blue-600 font-semibold mt-2 text-xs uppercase tracking-wide">
+                    Patient Health Record
                   </p>
 
 
@@ -407,15 +407,14 @@ const ResponderEmergencyPage = () => {
 
           ) : (
 
-            <div className="mt-5 bg-yellow-50 border border-yellow-200 rounded-xl p-5">
+            <div className="mt-5 bg-slate-50 border border-slate-200 rounded-xl p-5">
 
-              <p className="font-semibold text-yellow-800">
-                No approved medical documents available.
+              <p className="font-semibold text-slate-700">
+                No medical documents uploaded by patient.
               </p>
 
-              <p className="text-sm text-yellow-700 mt-1">
-                Documents will appear here after they are
-                approved by the administrator.
+              <p className="text-sm text-slate-500 mt-1">
+                Patient's prescriptions, lab reports, and medical summaries will appear here when uploaded.
               </p>
 
             </div>
@@ -459,18 +458,19 @@ const Info = ({ label, value }) => {
 const formatDocumentType = (type) => {
 
   if (!type) {
-    return "Other";
+    return "Medical Document";
   }
 
   const types = {
-    professional_id: "Professional ID",
-    medical_license: "Medical License",
-    police_id: "Police ID",
-    government_id: "Government ID",
-    other: "Other",
+    prescription: "Prescription",
+    medical_report: "Medical Report",
+    blood_report: "Blood Test Report",
+    scan_report: "MRI / CT / X-Ray Scan",
+    discharge_summary: "Hospital Discharge Summary",
+    other: "Other Medical Document",
   };
 
-  return types[type] || type;
+  return types[type] || type.replace(/_/g, " ").toUpperCase();
 };
 
 

@@ -9,6 +9,7 @@ import {
   deleteEmergencyContact,
   triggerSOSAlert,
   getSOSAlerts,
+  updateSOSStatus,
 } from "../controllers/emergencyController.js";
 
 const router = express.Router();
@@ -21,5 +22,6 @@ router.delete("/:id", protect, deleteEmergencyContact);
 
 router.post("/sos", optionalProtect, triggerSOSAlert);
 router.get("/sos-alerts", protect, getSOSAlerts);
+router.put("/sos-alerts/:id", protect, updateSOSStatus);
 
 export default router;

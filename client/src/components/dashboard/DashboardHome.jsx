@@ -4,10 +4,13 @@ import { Loader2 } from "lucide-react";
 import WelcomeCard from "./WelcomeCard";
 import EmergencyStatus from "./EmergencyStatus";
 import HealthSummary from "./HealthSummary";
+import LiveSOSFeed from "./LiveSOSFeed";
 
 import api from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 
 const DashboardHome = () => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,9 +45,13 @@ const DashboardHome = () => {
     );
   }
 
+  const isResponderOrAdmin = user?.accountType === "responder" || user?.role === "admin";
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       <WelcomeCard />
+
+      {isResponderOrAdmin && <LiveSOSFeed />}
 
       <EmergencyStatus
         profile={profile}

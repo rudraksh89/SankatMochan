@@ -212,13 +212,58 @@ export const triggerSOSAlert = async (req, res) => {
 // =======================
 export const getSOSAlerts = async (req, res) => {
   try {
-    const alerts = await EmergencyAlert.find({ status: "active" })
+    const { status } = req.query;
+    const filter = status ? { status } : { status: { $in: ["active", "dispatched"] } };
+
+    const alerts = await EmergencyAlert.find(filter)
       .populate("user", "fullName phone email bloodGroup")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(50);
 
     res.status(200).json({
       success: true,
       alerts,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// =======================
+// Update SOS Alert Status
+// =======================
+export const updateSOSStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!["active", "dispatched", "resolved"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status value",
+      });
+    }
+
+    const alert = await EmergencyAlert.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    ).populate("user", "fullName phone email bloodGroup");
+
+    if (!alert) {
+      return res.status(404).json({
+        success: false,
+        message: "SOS alert not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `SOS alert status updated to ${status}`,
+      alert,
     });
   } catch (error) {
     res.status(500).json({

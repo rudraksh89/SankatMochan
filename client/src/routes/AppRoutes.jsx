@@ -15,6 +15,7 @@ import VerificationPage from "../pages/VerificationPage";
 import AdminVerificationPage from "../pages/AdminVerificationPage";
 import AdminRoute from "./AdminRoute";
 import ResponderEmergencyPage from "../pages/ResponderEmergencyPage";
+import SOSRadarPage from "../pages/SOSRadarPage";
 
 const AppRoutes = () => {
   return (
@@ -28,6 +29,7 @@ const AppRoutes = () => {
       <Route path="/dashboard/qr" element={<QRPage/>}/>
       <Route path="/dashboard/card" element={<EmergencyCardPage/>}/>
       <Route path="/dashboard/settings" element={<SettingsPage/>}/>
+      <Route path="/dashboard/sos-radar" element={<SOSRadarPage/>}/>
       <Route path="/register" element={<Register/>}/>
       <Route path="/emergency/:userId" element={<EmergencyPage />}/>
       <Route path="/dashboard/verification"  element={<VerificationPage />}/>

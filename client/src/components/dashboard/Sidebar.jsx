@@ -11,6 +11,7 @@ import {
   BadgeCheck,
   ShieldCheck,
   HeartPulse,
+  Radio,
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
@@ -104,6 +105,23 @@ const Sidebar = () => {
               </NavLink>
             );
           })}
+
+          {/* LIVE SOS RADAR FOR RESPONDERS / ADMINS */}
+          {(user?.accountType === "responder" || user?.role === "admin") && (
+            <NavLink
+              to="/dashboard/sos-radar"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${
+                  isActive
+                    ? "bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white shadow-lg shadow-red-600/30 font-bold"
+                    : "text-red-400 hover:bg-slate-900 hover:text-white"
+                }`
+              }
+            >
+              <Radio size={19} className="animate-pulse text-red-500" />
+              <span>Live SOS Radar</span>
+            </NavLink>
+          )}
 
           {/* RESPONDER VERIFICATION */}
           {user?.accountType === "responder" && (

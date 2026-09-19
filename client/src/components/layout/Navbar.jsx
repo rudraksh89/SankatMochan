@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaHeartbeat, FaBars, FaTimes } from "react-icons/fa";
 import { motion } from "framer-motion";
-import { ShieldAlert, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);

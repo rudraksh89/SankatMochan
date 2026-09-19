@@ -6,9 +6,19 @@ import EmergencyContact from "../models/EmergencyContact.js";
 
 export const generateQRCode = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:5173";
+    // Prioritize active request Origin header for multi-device/LAN compatibility, falling back to ENV variables or localhost
+    let clientUrl = req.headers.origin || process.env.CLIENT_URL || process.env.FRONTEND_URL;
+    if (!clientUrl && req.headers.host) {
+      const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
+      const hostWithoutPort = req.headers.host.split(":")[0];
+      clientUrl = `${protocol}://${hostWithoutPort}:5173`;
+    }
+    if (!clientUrl) {
+      clientUrl = "http://localhost:5173";
+    }
+    clientUrl = clientUrl.replace(/\/$/, "");
 
+    const userId = req.user._id;
     const user = await User.findById(userId).select("fullName phone");
     const profile = await MedicalProfile.findOne({ user: userId });
     const contacts = await EmergencyContact.find({ user: userId }).sort({ isPrimary: -1, createdAt: 1 });

@@ -6,11 +6,10 @@ import {
   FaShieldAlt,
   FaMapMarkerAlt,
   FaRobot,
-  FaUserNurse,
   FaHeartbeat
 } from "react-icons/fa";
 import { MdQrCode2 } from "react-icons/md";
-import { Sparkles, Activity, ShieldCheck, Zap } from "lucide-react";
+import { Sparkles, ShieldCheck, Zap } from "lucide-react";
 
 const Hero = () => {
   return (

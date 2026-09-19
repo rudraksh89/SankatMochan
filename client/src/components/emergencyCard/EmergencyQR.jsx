@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
-import { Loader2, QrCode } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import api from "../../api/axios";
 
 const EmergencyQR = () => {

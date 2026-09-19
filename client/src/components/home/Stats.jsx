@@ -14,7 +14,6 @@ const Counter = ({ value, duration = 2 }) => {
   const ref = useRef(null);
 
   useEffect(() => {
-    let start = 0;
     const end = value;
     const totalMs = duration * 1000;
     let startTime = null;

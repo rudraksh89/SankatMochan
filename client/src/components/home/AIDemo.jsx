@@ -4,7 +4,6 @@ import {
   Brain,
   PhoneCall,
   Hospital,
-  ArrowRight,
   Sparkles
 } from "lucide-react";
 

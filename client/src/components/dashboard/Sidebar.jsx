@@ -7,7 +7,6 @@ import {
   IdCard,
   Settings,
   LogOut,
-  ShieldPlus,
   BadgeCheck,
   ShieldCheck,
   HeartPulse,

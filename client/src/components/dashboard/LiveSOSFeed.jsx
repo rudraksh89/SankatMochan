@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   AlertTriangle,
   MapPin,
@@ -14,6 +14,31 @@ import {
 } from "lucide-react";
 import api from "../../api/axios";
 import { Link } from "react-router-dom";
+import { io } from "socket.io-client";
+
+const getSocketURL = () => {
+  const apiUrl = api.defaults.baseURL || "http://localhost:5000/api";
+  return apiUrl.replace(/\/api\/?$/, "");
+};
+
+const playAlertTone = () => {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.4);
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
+  } catch (e) {
+    console.warn("Audio Context playback notice:", e);
+  }
+};
 
 const LiveSOSFeed = () => {
   const [alerts, setAlerts] = useState([]);
@@ -21,6 +46,11 @@ const LiveSOSFeed = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const soundRef = useRef(soundEnabled);
+
+  useEffect(() => {
+    soundRef.current = soundEnabled;
+  }, [soundEnabled]);
 
   const fetchAlerts = async (isManual = false) => {
     try {
@@ -39,11 +69,50 @@ const LiveSOSFeed = () => {
 
   useEffect(() => {
     fetchAlerts();
+
+    // Socket.IO Real-Time Connection
+    const socketUrl = getSocketURL();
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"],
+      reconnectionAttempts: 5,
+    });
+
+    socket.on("connect", () => {
+      console.log("📡 Connected to SOS Radar WebSocket:", socket.id);
+      socket.emit("join_radar");
+    });
+
+    socket.on("new_sos_alert", (newAlert) => {
+      console.log("🚨 REAL-TIME SOS RECEIVED:", newAlert);
+      if (soundRef.current) {
+        playAlertTone();
+      }
+      setAlerts((prev) => {
+        const exists = prev.some((a) => a._id === newAlert._id);
+        if (exists) return prev;
+        return [newAlert, ...prev];
+      });
+    });
+
+    socket.on("sos_status_updated", (updatedAlert) => {
+      console.log("🔄 SOS STATUS UPDATED VIA SOCKET:", updatedAlert);
+      if (updatedAlert.status === "resolved") {
+        setAlerts((prev) => prev.filter((a) => a._id !== updatedAlert._id));
+      } else {
+        setAlerts((prev) =>
+          prev.map((a) => (a._id === updatedAlert._id ? updatedAlert : a))
+        );
+      }
+    });
+
     const interval = setInterval(() => {
       fetchAlerts();
-    }, 10000); // 10-second live polling radar
+    }, 15000); // Background fallback sync
 
-    return () => clearInterval(interval);
+    return () => {
+      socket.disconnect();
+      clearInterval(interval);
+    };
   }, []);
 
   const handleUpdateStatus = async (alertId, newStatus) => {

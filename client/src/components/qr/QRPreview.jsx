@@ -1,4 +1,4 @@
-import { ShieldCheck, HeartPulse, Lock } from "lucide-react";
+import { HeartPulse, Lock } from "lucide-react";
 
 const QRPreview = () => {
   return (

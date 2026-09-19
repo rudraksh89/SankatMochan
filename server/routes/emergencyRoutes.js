@@ -1,6 +1,7 @@
 import express from "express";
 import protect from "../middleware/authMiddleware.js";
 import optionalProtect from "../middleware/optionalAuthMiddleware.js";
+import { sosLimiter } from "../middleware/rateLimitMiddleware.js";
 
 import {
   createEmergencyContact,
@@ -20,7 +21,7 @@ router.put("/", protect, updateEmergencyContact);
 router.put("/:id", protect, updateEmergencyContact);
 router.delete("/:id", protect, deleteEmergencyContact);
 
-router.post("/sos", optionalProtect, triggerSOSAlert);
+router.post("/sos", optionalProtect, sosLimiter, triggerSOSAlert);
 router.get("/sos-alerts", protect, getSOSAlerts);
 router.put("/sos-alerts/:id", protect, updateSOSStatus);
 

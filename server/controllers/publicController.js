@@ -3,6 +3,7 @@ import MedicalProfile from "../models/MedicalProfile.js";
 import EmergencyContact from "../models/EmergencyContact.js";
 import Insurance from "../models/Insurance.js";
 import PatientDocument from "../models/PatientDocument.js";
+import { generateAITriageAdvice } from "../services/aiService.js";
 
 // =====================================================
 // GET PUBLIC EMERGENCY CARD
@@ -166,7 +167,6 @@ export const getEmergencyCard = async (req, res) => {
 // =====================================================
 // GET AI TRIAGE ADVICE
 // =====================================================
-import { generateAITriageAdvice } from "../services/aiService.js";
 
 export const getAITriageAdvice = async (req, res) => {
   try {

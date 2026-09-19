@@ -7,13 +7,6 @@ import {
   ExternalLink,
   Loader2,
   ShieldCheck,
-  User,
-  Mail,
-  Phone,
-  Building2,
-  Briefcase,
-  CreditCard,
-  AlertTriangle
 } from "lucide-react";
 
 import api from "../api/axios";

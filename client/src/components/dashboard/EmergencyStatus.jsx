@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertCircle, ArrowRight, ShieldCheck } from "lucide-react";
+import { CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const EmergencyStatus = ({ profile, contacts }) => {

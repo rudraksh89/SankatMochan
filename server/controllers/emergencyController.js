@@ -1,4 +1,6 @@
 import EmergencyContact from "../models/EmergencyContact.js";
+import EmergencyAlert from "../models/EmergencyAlert.js";
+import { getIO } from "../config/socket.js";
 
 // =======================
 // Create Emergency Contact
@@ -172,7 +174,6 @@ export const deleteEmergencyContact = async (req, res) => {
 // =======================
 // Trigger SOS Alert
 // =======================
-import EmergencyAlert from "../models/EmergencyAlert.js";
 
 export const triggerSOSAlert = async (req, res) => {
   try {
@@ -193,11 +194,27 @@ export const triggerSOSAlert = async (req, res) => {
       notes: notes || "Emergency SOS broadcast triggered",
     });
 
+    const populatedAlert = await EmergencyAlert.findById(alert._id).populate(
+      "user",
+      "fullName phone email bloodGroup"
+    );
+
+    // Broadcast real-time socket alert to all connected responders on the SOS Radar
+    try {
+      const io = getIO();
+      if (io) {
+        io.to("sos_radar_room").emit("new_sos_alert", populatedAlert || alert);
+        io.emit("new_sos_alert", populatedAlert || alert);
+        console.log("📡 Emitted real-time SOS broadcast event to Socket clients");
+      }
+    } catch (socketErr) {
+      console.warn("Socket broadcast error:", socketErr.message);
+    }
 
     res.status(201).json({
       success: true,
       message: "Emergency SOS broadcasted successfully! Responders notified.",
-      alert,
+      alert: populatedAlert || alert,
     });
   } catch (error) {
     res.status(500).json({
@@ -260,6 +277,17 @@ export const updateSOSStatus = async (req, res) => {
       });
     }
 
+    // Broadcast status update via Socket.IO
+    try {
+      const io = getIO();
+      if (io) {
+        io.to("sos_radar_room").emit("sos_status_updated", alert);
+        io.emit("sos_status_updated", alert);
+      }
+    } catch (socketErr) {
+      console.warn("Socket update broadcast error:", socketErr.message);
+    }
+
     res.status(200).json({
       success: true,
       message: `SOS alert status updated to ${status}`,
@@ -271,4 +299,5 @@ export const updateSOSStatus = async (req, res) => {
       message: error.message,
     });
   }
-};
+};
+

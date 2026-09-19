@@ -105,6 +105,22 @@ export const uploadVerificationDocument = async (
       });
     }
 
+    const allowedDocTypes = [
+      "professional_id",
+      "medical_license",
+      "police_id",
+      "government_id",
+      "other",
+    ];
+    const documentType = req.body.documentType || "professional_id";
+
+    if (!allowedDocTypes.includes(documentType)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid verification document type",
+      });
+    }
+
     // ==============================
     // CLOUDINARY UPLOAD
     // ==============================
@@ -140,7 +156,7 @@ export const uploadVerificationDocument = async (
     const document = await MedicalDocument.create({
       user: req.user._id,
 
-      documentType: req.body.documentType,
+      documentType: documentType,
 
       fileName: req.file.originalname,
 

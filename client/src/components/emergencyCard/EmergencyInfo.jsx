@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { User, Droplets, AlertTriangle, HeartPulse, Phone, Loader2 } from "lucide-react";
+import { Droplets, AlertTriangle, HeartPulse, Phone, Loader2 } from "lucide-react";
 import api from "../../api/axios";
 
 const EmergencyInfo = () => {

@@ -8,8 +8,7 @@ import {
   CheckCircle2,
   ArrowRight,
   ShieldCheck,
-  Activity,
-  QrCode
+  Activity
 } from "lucide-react";
 import { Link } from "react-router-dom";
 

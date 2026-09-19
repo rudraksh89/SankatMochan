@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, ArrowRight, ShieldCheck, HeartPulse } from "lucide-react";
+import { Mail, ArrowRight, HeartPulse } from "lucide-react";
 
 import AuthCard from "./AuthCard";
 import PasswordInput from "./PasswordInput";

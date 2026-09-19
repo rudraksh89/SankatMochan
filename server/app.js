@@ -11,6 +11,11 @@ import publicRoutes from "./routes/publicRoutes.js";
 import verificationRoutes from "./routes/verificationRoutes.js";
 import responderEmergencyRoutes from "./routes/responderEmergencyRoutes.js";
 import errorMiddleware from "./middleware/errorMiddleware.js";
+import {
+  apiLimiter,
+  authLimiter,
+  publicLimiter,
+} from "./middleware/rateLimitMiddleware.js";
 
 const app = express();
 
@@ -39,13 +44,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use("/api/auth", authRoutes);
+// Apply global API rate limiter to all /api routes
+app.use("/api", apiLimiter);
+
+// Specific rate limiters for sensitive / public endpoints
+app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/public", publicLimiter, publicRoutes);
+
 app.use("/api/profile", profileRoutes);
 app.use("/api/emergency", emergencyRoutes);
 app.use("/api/insurance", insuranceRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/qr", qrRoutes);
-app.use("/api/public", publicRoutes);
 app.use("/api/verification", verificationRoutes);
 app.use("/api/responder/emergency", responderEmergencyRoutes);
 

@@ -24,21 +24,21 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/verify-otp" element={<VerifyOTP />} />
-      <Route path="/dashboard" element={<CitizenDashboard />}/>
-      <Route path="/dashboard/profile" element={<MedicalProfile />}/>
-      <Route path="/dashboard/qr" element={<QRPage/>}/>
-      <Route path="/dashboard/card" element={<EmergencyCardPage/>}/>
-      <Route path="/dashboard/settings" element={<SettingsPage/>}/>
-      <Route path="/dashboard/sos-radar" element={<SOSRadarPage/>}/>
-      <Route path="/register" element={<Register/>}/>
-      <Route path="/emergency/:userId" element={<EmergencyPage />}/>
-      <Route path="/dashboard/verification"  element={<VerificationPage />}/>
+      <Route path="/dashboard" element={<CitizenDashboard />} />
+      <Route path="/dashboard/profile" element={<MedicalProfile />} />
+      <Route path="/dashboard/qr" element={<QRPage />} />
+      <Route path="/dashboard/card" element={<EmergencyCardPage />} />
+      <Route path="/dashboard/settings" element={<SettingsPage />} />
+      <Route path="/dashboard/sos-radar" element={<SOSRadarPage />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/emergency/:userId" element={<EmergencyPage />} />
+      <Route path="/dashboard/verification" element={<VerificationPage />} />
       <Route path="/dashboard/admin/verifications" element={
         <AdminRoute>
           <AdminVerificationPage />
         </AdminRoute>
-      }/>
-      <Route path="/dashboard/responder/emergency/:userId" element={<ResponderEmergencyPage />}/>
+      } />
+      <Route path="/dashboard/responder/emergency/:userId" element={<ResponderEmergencyPage />} />
     </Routes>
   );
 };

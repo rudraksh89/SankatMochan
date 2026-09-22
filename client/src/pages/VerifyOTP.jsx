@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import api from "../api/axios";
 import { motion } from "framer-motion";
-import { KeyRound, Lock, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { KeyRound, Lock, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
 const VerifyOTP = () => {
@@ -13,6 +13,7 @@ const VerifyOTP = () => {
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleReset = async (e) => {
     e.preventDefault();
@@ -23,6 +24,7 @@ const VerifyOTP = () => {
 
     try {
       setLoading(true);
+      setErrorMsg("");
       const res = await api.post("/auth/reset-password", {
         email,
         otp,
@@ -34,7 +36,9 @@ const VerifyOTP = () => {
         navigate("/login");
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to reset password");
+      const msg = err.response?.data?.message || "Invalid or expired OTP code.";
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -84,12 +88,25 @@ const VerifyOTP = () => {
                 type="text"
                 maxLength={6}
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
+                onChange={(e) => {
+                  setOtp(e.target.value);
+                  if (errorMsg) setErrorMsg("");
+                }}
                 placeholder="123456"
                 required
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-sm tracking-widest font-mono"
+                className={`w-full bg-slate-900 border rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-500 outline-none text-sm tracking-widest font-mono transition-all ${
+                  errorMsg
+                    ? "border-red-500 focus:border-red-400 focus:ring-1 focus:ring-red-500 text-red-200"
+                    : "border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                }`}
               />
             </div>
+            {errorMsg && (
+              <div className="mt-2 p-2.5 bg-red-950/70 border border-red-500/50 rounded-xl flex items-center gap-2 text-red-300 text-xs font-medium animate-fadeIn">
+                <AlertCircle size={16} className="text-red-400 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
           </div>
 
           <div>

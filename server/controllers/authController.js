@@ -1,6 +1,107 @@
 import User from "../models/User.js";
+import Otp from "../models/Otp.js";
 import bcrypt from "bcrypt";
 import generateToken from "../utils/generateToken.js";
+import { sendEmail, getOtpHtmlTemplate } from "../utils/sendEmail.js";
+
+// ================= SEND REGISTER OTP =================
+
+export const sendRegisterOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email address is required",
+      });
+    }
+
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is already registered. Please log in.",
+      });
+    }
+
+    // Generate 6 digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store in Otp collection
+    await Otp.deleteMany({ email: email.toLowerCase() });
+    await Otp.create({
+      email: email.toLowerCase(),
+      otp,
+    });
+
+    console.log(`\n==================================================`);
+    console.log(`🔑 [SANKAT MOCHAN] REGISTRATION OTP FOR ${email}: ${otp}`);
+    console.log(`==================================================\n`);
+
+    // Send email notification
+    const emailResult = await sendEmail({
+      to: email,
+      subject: "Sankat Mochan - Account Registration Verification OTP",
+      html: getOtpHtmlTemplate(otp, "Account Registration Verification"),
+      text: `Your Sankat Mochan registration verification OTP is ${otp}. It will expire in 15 minutes.`,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: emailResult?.devFallback
+        ? "Verification OTP generated! (SMTP pending in .env - OTP printed to server terminal)"
+        : "Verification OTP code sent to your email address",
+    });
+  } catch (error) {
+    console.error("SEND REGISTER OTP ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+// ================= VERIFY REGISTER OTP =================
+
+export const verifyRegisterOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Email address and 6-digit OTP code are required",
+      });
+    }
+
+    const validOtp = await Otp.findOne({
+      email: email.toLowerCase(),
+      otp: otp.trim(),
+    });
+
+    if (!validOtp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired OTP code. Please check your email or request a new OTP.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Email address verified successfully!",
+    });
+  } catch (error) {
+    console.error("VERIFY REGISTER OTP ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 
 // ================= REGISTER =================
 
@@ -14,6 +115,7 @@ export const register = async (req, res) => {
       email,
       password,
       phone,
+      otp,
       accountType,
       profession,
       organization,
@@ -26,6 +128,26 @@ export const register = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
+      });
+    }
+
+    if (!otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification OTP code is required",
+      });
+    }
+
+    // Verify OTP code
+    const validOtp = await Otp.findOne({
+      email: email.toLowerCase(),
+      otp,
+    });
+
+    if (!validOtp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired OTP code. Please request a new verification OTP.",
       });
     }
 
@@ -104,11 +226,14 @@ export const register = async (req, res) => {
         userRole === "admin"
           ? "not_required"
           : finalAccountType === "responder"
-          ? "not_submitted"
-          : "not_required",
+            ? "not_submitted"
+            : "not_required",
 
       isVerified: userRole === "admin" ? true : false,
     });
+
+    // Delete verified OTP
+    await Otp.deleteMany({ email: email.toLowerCase() });
 
     const token = generateToken(user._id);
 
@@ -430,13 +555,23 @@ export const forgotPassword = async (req, res) => {
     user.resetOtpExpires = expiresAt;
     await user.save();
 
-    console.log(`[AUTH] Password Reset OTP for ${email}: ${otp}`);
+    console.log(`\n==================================================`);
+    console.log(`🔑 [SANKAT MOCHAN] PASSWORD RESET OTP FOR ${email}: ${otp}`);
+    console.log(`==================================================\n`);
+
+    // Send email notification
+    const emailResult = await sendEmail({
+      to: email,
+      subject: "Sankat Mochan - Password Reset Verification OTP",
+      html: getOtpHtmlTemplate(otp, "Password Reset Verification"),
+      text: `Your Sankat Mochan password reset OTP is ${otp}. It will expire in 15 minutes.`,
+    });
 
     res.status(200).json({
       success: true,
-      message: "OTP sent to registered email address",
-      // Returning otp for seamless local dev & evaluation
-      demoOtp: otp,
+      message: emailResult?.devFallback
+        ? "Verification OTP generated! (SMTP pending in .env - OTP printed to server terminal)"
+        : "Verification OTP code sent to your registered email address",
     });
   } catch (error) {
     console.error("FORGOT PASSWORD ERROR:", error);
@@ -499,4 +634,4 @@ export const resetPassword = async (req, res) => {
       message: error.message,
     });
   }
-};
+};

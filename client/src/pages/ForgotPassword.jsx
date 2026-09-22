@@ -21,10 +21,7 @@ const ForgotPassword = () => {
       setLoading(true);
       const res = await api.post("/auth/forgot-password", { email });
       if (res.data.success) {
-        toast.success(res.data.message || "OTP sent successfully!");
-        if (res.data.demoOtp) {
-          toast(`Demo OTP Code: ${res.data.demoOtp}`, { icon: "🔑", duration: 8000 });
-        }
+        toast.success(res.data.message || "OTP sent successfully to your email!");
         navigate("/verify-otp", { state: { email } });
       }
     } catch (err) {

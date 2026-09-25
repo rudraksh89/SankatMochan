@@ -1,12 +1,25 @@
 import crypto from "crypto";
+import os from "os";
 import { generateQRCodeDataURL } from "../utils/generateQR.js";
 import User from "../models/User.js";
 import MedicalProfile from "../models/MedicalProfile.js";
 import EmergencyContact from "../models/EmergencyContact.js";
 
+const getLocalIpAddress = () => {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === "IPv4" && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return null;
+};
+
 export const generateQRCode = async (req, res) => {
   try {
-    // Prioritize active request Origin header for multi-device/LAN compatibility, falling back to ENV variables or localhost
+    // Prioritize active request Origin header for multi-device/LAN compatibility
     let clientUrl = req.headers.origin || process.env.CLIENT_URL || process.env.FRONTEND_URL;
     if (!clientUrl && req.headers.host) {
       const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
@@ -17,6 +30,14 @@ export const generateQRCode = async (req, res) => {
       clientUrl = "http://localhost:5173";
     }
     clientUrl = clientUrl.replace(/\/$/, "");
+
+    // If clientUrl uses localhost/127.0.0.1, replace with machine's LAN IP so phone scans work over local Wi-Fi
+    if (clientUrl.includes("localhost") || clientUrl.includes("127.0.0.1")) {
+      const lanIp = getLocalIpAddress();
+      if (lanIp) {
+        clientUrl = clientUrl.replace("localhost", lanIp).replace("127.0.0.1", lanIp);
+      }
+    }
 
     const userId = req.user._id;
     const user = await User.findById(userId).select("fullName phone");

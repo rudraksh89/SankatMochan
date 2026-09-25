@@ -12,9 +12,9 @@ export const generateAITriageAdvice = async ({
   organDonor,
   gender,
 }) => {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
 
-  if (apiKey && process.env.GEMINI_API_KEY) {
+  if (geminiKey && geminiKey.trim() !== "") {
     try {
       const prompt = `You are an expert emergency medical AI assistant (SankatMochan Triage AI).
 Analyze the following patient emergency medical profile and provide rapid, high-priority triage advice for first responders and paramedics:

@@ -1,108 +1,175 @@
-# 🚨 Sankat Mochan — Emergency Identity System
+# 🚨 Sankat Mochan — Full-Stack AI Emergency Identity & Triage Platform
 
-> *Sankat Mochan* ("remover of crisis") — an AI-powered emergency medical ID platform that helps first responders instantly access an accident victim's critical medical information when they cannot speak for themselves.
+> **Sankat Mochan** ("remover of crisis") is a full-stack, AI-powered emergency medical identity platform designed to help first responders instantly access an accident victim's critical medical information and receive real-time AI triage advice when victims cannot speak for themselves.
 
 ![Status](https://img.shields.io/badge/status-active-success)
-![License](https://img.shields.io/badge/license-MIT-blue)
+![Stack](https://img.shields.io/badge/stack-MERN--Vite-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+---
 
 ## 🩺 The Problem
 
-During accidents, disasters, or medical emergencies, victims are often unable to communicate basic but life-critical information — blood group, allergies, existing conditions, current medications, and emergency contact details. This delays treatment and can cost lives.
+During accidents, disasters, or medical emergencies, victims are often unable to communicate basic but life-critical information — blood group, allergies, existing conditions, current medications, and emergency contact details. This delays treatment and costs lives.
+
+---
 
 ## 💡 The Solution
 
-Sankat Mochan lets every citizen register their medical profile once, then carry it everywhere as a **QR code** or **NFC tag**. Any verified first responder — police, paramedics, hospital staff, or quick response teams — can scan it instantly, with **no app or internet connection required on their end**, and get:
+Sankat Mochan allows citizens to register their medical profile once and carry it everywhere as a scannable **Emergency QR Code** or **NFC Tag**. 
 
-- Blood group & allergy alerts
-- Chronic conditions & current medications
-- Emergency contact (one tap to call)
-- AI-generated triage guidance for faster, safer treatment
+Any first responder or paramedic can scan the QR code to instantly view essential emergency contacts and blood type. Verified responders gain authenticated access to full medical history, insurance details, uploaded medical documents, and **AI-generated Triage & First-Aid Advice**.
+
+---
 
 ## ✨ Key Features
 
 | Feature | Description |
 |---|---|
-| 🔲 **QR Code Generation** | Encodes the full medical profile into a scannable, offline-readable QR code |
-| 📡 **NFC Tag Support** | Write/read profile data via Web NFC API (Chrome on Android) |
-| 🤖 **AI Health Assistant** | Claude-powered chatbot for health questions, risk analysis, and paramedic guidance |
-| 🚑 **AI Triage Advisor** | Responders get instant AI-generated first-aid and triage advice after a scan |
-| 👤 **Dual Interface** | Separate portals for citizens (register/manage ID) and verified responders (scan/search) |
-| 🔍 **Search by Name/ID** | Responders can look up records manually as a scan fallback |
-| 📊 **Responder Dashboard** | Live stats, full citizen records table, CSV export, activity audit log |
-| 📱 **Fully Responsive** | Works on mobile, tablet, and desktop |
-| 🔐 **Local-first Storage** | All data stored in browser localStorage — no backend, no data leaves the device |
+| 🔲 **Signed QR Code Generation** | Encodes a compact, HMAC-SHA256 signed medical payload scannable by any mobile camera or scanner |
+| 📡 **NFC Tag Support** | Write/read profile data via Web NFC API |
+| 🤖 **AI Emergency Triage Engine** | Google Gemini 1.5 Flash integration generating rapid, multi-part triage protocols for paramedics (with intelligent rule engine fallback) |
+| 📡 **Real-time SOS Radar (WebSockets)** | Live emergency dispatch map broadcast powered by Socket.IO |
+| 👤 **Role-Based Portals** | Separate authenticated flows for **Citizens**, **Verified First Responders**, and **System Admins** |
+| 🛡️ **Responder Verification** | Professional ID & Medical License verification workflow reviewed by Admins |
+| 📄 **Document Vault** | Secure Cloudinary storage for prescriptions, blood reports, and discharge summaries |
+| 📱 **Responsive & Lazy Loaded** | Ultra-fast React 19 + Vite frontend with asynchronous chunk splitting |
 
-## 🎯 Use Cases
-
-- 🪖 **Army & NCC personnel** — field identification during exercises or operations
-- 🚗 **Road accident victims** — faster, safer hospital triage
-- 🌊 **Disaster relief zones** — identify victims and reunite families
-- 🏃 **Marathons/sports events** — instant medical info for cardiac/heat emergencies
-- 👴 **Elderly/Alzheimer's patients** — NFC wristband identification
-- ✈️ **Tourists & travellers** — language-independent emergency ID anywhere in India
+---
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** HTML5, CSS3 (custom design system, no framework), vanilla JavaScript
-- **QR Codes:** [qrcode.js](https://github.com/soldair/node-qrcode) (CDN)
-- **NFC:** Web NFC API (`NDEFReader`)
-- **AI:** Anthropic Claude API (`claude-sonnet-4-6`) for health assistant & triage advice
-- **Storage:** Browser `localStorage` (no backend/database required)
-- **Geolocation:** Browser Geolocation API
+### Frontend (`/client`)
+- **Framework:** React 19 + Vite 8
+- **Styling:** Tailwind CSS v4, Lucide React icons, Framer Motion
+- **State & Routing:** React Router v7, Context API
+- **Real-Time & Export:** Socket.io-client, Axios, HTML2Canvas / JSPDF / QR Code React
+
+### Backend (`/server`)
+- **Runtime & Server:** Node.js, Express 5
+- **Database:** MongoDB Atlas (Mongoose v9)
+- **Real-Time:** Socket.IO
+- **AI Integration:** Google Gemini 1.5 Flash REST API (`server/services/aiService.js`)
+- **Storage & Mail:** Cloudinary (Multer memory buffer), Nodemailer (SMTP OTP)
+- **Security:** JWT Authentication, Bcrypt password hashing, Express Rate Limiting
+
+---
 
 ## 📂 Project Structure
 
 ```
-sankat-mochan/
-├── index.html      # App markup & structure
-├── style.css        # Full design system (dark theme, animations, components)
-├── script.js        # App logic: auth, registration, QR/NFC, AI calls, responder dashboard
+SankatMochan/
+├── client/                   # Vite + React 19 Frontend
+│   ├── src/
+│   │   ├── api/              # Axios instance & config
+│   │   ├── components/       # UI, Dashboard, Emergency, Admin components
+│   │   ├── context/          # AuthContext & ThemeContext
+│   │   ├── pages/            # App pages (Home, Emergency, SOS Radar, etc.)
+│   │   ├── routes/           # AppRoutes (with React.lazy code-splitting)
+│   │   └── styles/           # Tailwind CSS styles
+│   ├── .env.example          # Client environment template
+│   └── package.json
+│
+├── server/                   # Node.js + Express 5 Backend
+│   ├── config/               # Database, Cloudinary, Socket.IO config
+│   ├── controllers/          # Auth, Profile, Emergency, QR, Verification controllers
+│   ├── middleware/           # Auth, Admin, Upload (Multer), Rate Limiters
+│   ├── models/               # Mongoose schemas (User, MedicalProfile, EmergencyAlert, etc.)
+│   ├── routes/               # API Express routes
+│   ├── services/             # Gemini AI Service & triage engine
+│   ├── .env.example          # Server environment template
+│   └── server.js             # HTTP & WebSocket server entry point
+│
 └── README.md
 ```
 
+---
+
 ## 🚀 Getting Started
 
-### Run locally
-Just open `index.html` in any modern browser — no build step, no install required.
+### Prerequisites
+- Node.js (v18+ recommended)
+- MongoDB Database URI (Local or MongoDB Atlas)
+- Google Gemini API Key *(Optional, for live AI Triage Advice)*
+- Cloudinary Credentials *(Optional, for document uploads)*
+
+---
+
+### 1. Backend Setup
 
 ```bash
-git clone https://github.com/<your-username>/sankat-mochan.git
-cd sankat-mochan
-open index.html        # macOS
-# or double-click index.html on Windows/Linux
+cd server
+npm install
+
+# Copy environment template
+cp .env.example .env   # (or copy manually on Windows)
 ```
 
-### Deploy on GitHub Pages
-1. Push this repo to GitHub
-2. Go to **Settings → Pages**
-3. Set source to the `main` branch, root folder
-4. Your live demo will be at `https://<your-username>.github.io/sankat-mochan/`
+Edit `server/.env`:
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+CLIENT_URL=http://localhost:5173
+GEMINI_API_KEY=your_gemini_api_key
+```
 
-> **Note on the AI features:** The AI Health Assistant and AI Triage Advisor call the Anthropic API directly from the browser. For a public deployment, you'll want to proxy these calls through your own backend to avoid exposing API keys — see [Anthropic's API docs](https://docs.claude.com) for details. Without a configured backend, these features will show a connection error but the rest of the app (registration, QR/NFC generation, scanning, search) works fully offline.
+Run the backend dev server:
+```bash
+npm run dev
+```
+*Server will start with WebSockets on `http://localhost:5000`.*
 
-## 👥 Demo Accounts
+---
 
-**Citizen Portal** — any name + any 4-digit PIN registers a new account instantly.
+### 2. Frontend Setup
 
-**Responder Access** — use PIN `9999` for demo access.
+Open a new terminal:
+```bash
+cd client
+npm install
 
-Two demo profiles are pre-seeded so you can try scanning/search immediately:
-- *Cadet Arjun Verma* (NCC, B+ blood, Penicillin allergy)
-- *Priya Mehta* (Police, O− blood, Type 1 Diabetic)
+# Copy environment template
+cp .env.example .env
+```
 
-## 🗺️ Roadmap
+Edit `client/.env`:
+```env
+VITE_API_URL=http://localhost:5000/api
+VITE_PUBLIC_FRONTEND_URL=http://localhost:5173
+```
 
-- [ ] Backend + database for multi-device sync
-- [ ] Government ID (Aadhaar/DigiLocker) verification integration
-- [ ] Multi-language support (Hindi, regional languages)
-- [ ] SMS-based fallback for non-smartphone users
-- [ ] Hospital-side dashboard for bulk triage during mass casualty events
-- [ ] Encrypted QR payloads (AES) instead of plain JSON
+Run the frontend dev server:
+```bash
+npm run dev
+```
+*Frontend app will run on `http://localhost:5173`.*
+
+---
+
+## 👥 Roles & Workflows
+
+1. **Citizen Portal (`/register`):**
+   - Register account, complete email OTP verification.
+   - Build medical profile (Blood group, allergies, medications, emergency contacts).
+   - Generate scannable Emergency QR Card or write to NFC wristband.
+
+2. **Responder Portal (`/dashboard/verification`):**
+   - Responders register with `accountType: "responder"`.
+   - Upload official badge/ID document for admin verification.
+   - Once approved, access verified emergency patient files and live **SOS Radar**.
+
+3. **Admin Portal (`/dashboard/admin/verifications`):**
+   - Review pending responder verification requests and approve/reject credentials.
+
+---
 
 ## 📄 License
 
 MIT License — free to use, modify, and deploy.
 
+---
+
 ## 🙏 Acknowledgements
 
-Built to address a real gap in India's emergency response infrastructure — inspired by the thousands of road accident victims who could be identified and treated faster with better technology.
+Built to solve emergency response delays — empowering first responders with instant, accurate medical data and AI triage insights.

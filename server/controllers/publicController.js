@@ -3,6 +3,8 @@ import MedicalProfile from "../models/MedicalProfile.js";
 import EmergencyContact from "../models/EmergencyContact.js";
 import Insurance from "../models/Insurance.js";
 import PatientDocument from "../models/PatientDocument.js";
+import QRScanHistory from "../models/QRScanHistory.js";
+import { getIO } from "../config/socket.js";
 import { generateAITriageAdvice } from "../services/aiService.js";
 
 // =====================================================
@@ -26,6 +28,57 @@ export const getEmergencyCard = async (req, res) => {
         success: false,
         message: "User not found",
       });
+    }
+
+    // Record QR scan history
+    try {
+      let scannerName = "Anonymous First Responder";
+      let scannerRole = "anonymous";
+      let scannedBy = null;
+
+      if (req.user) {
+        scannedBy = req.user._id;
+        const isResp =
+          req.user.accountType === "responder" &&
+          req.user.isVerified === true &&
+          req.user.verificationStatus === "approved";
+        const isAdmin = req.user.role === "admin";
+        scannerRole = isResp ? "responder" : isAdmin ? "admin" : "citizen";
+        scannerName = req.user.fullName
+          ? `${req.user.fullName}${isResp ? " (Verified Responder)" : ""}`
+          : isResp
+          ? "Verified Emergency Responder"
+          : "Registered Citizen";
+      }
+
+      const userAgentStr = req.headers["user-agent"] || "";
+      let deviceType = "Mobile Browser";
+      if (/android/i.test(userAgentStr)) deviceType = "Android Device";
+      else if (/iphone|ipad|ipod/i.test(userAgentStr)) deviceType = "iOS Device";
+      else if (/windows|macintosh|linux/i.test(userAgentStr)) deviceType = "Desktop Browser";
+
+      const clientIp =
+        req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+        req.socket?.remoteAddress ||
+        req.ip ||
+        "Unknown IP";
+
+      const scanEntry = await QRScanHistory.create({
+        scannedUser: userId,
+        scannedBy,
+        scannerName,
+        scannerRole,
+        ipAddress: clientIp,
+        userAgent: userAgentStr,
+        deviceType,
+      });
+
+      const io = getIO();
+      if (io) {
+        io.to(`user_${userId}`).emit("qr_scanned", scanEntry);
+      }
+    } catch (historyErr) {
+      console.error("Failed to log QR scan history:", historyErr);
     }
 
     // =================================================
@@ -200,4 +253,4 @@ export const getAITriageAdvice = async (req, res) => {
       message: error.message,
     });
   }
-};
+};

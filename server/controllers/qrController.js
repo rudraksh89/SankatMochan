@@ -4,6 +4,7 @@ import { generateQRCodeDataURL } from "../utils/generateQR.js";
 import User from "../models/User.js";
 import MedicalProfile from "../models/MedicalProfile.js";
 import EmergencyContact from "../models/EmergencyContact.js";
+import QRScanHistory from "../models/QRScanHistory.js";
 
 const getLocalIpAddress = () => {
   const interfaces = os.networkInterfaces();
@@ -83,6 +84,95 @@ export const generateQRCode = async (req, res) => {
     });
   } catch (error) {
     console.error("QR ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getQRScanHistory = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const history = await QRScanHistory.find({ scannedUser: userId })
+      .populate("scannedBy", "fullName email phone accountType isVerified profession organization")
+      .sort({ createdAt: -1 })
+      .limit(200);
+
+    const totalScans = history.length;
+    const responderScans = history.filter(
+      (h) => h.scannerRole === "responder"
+    ).length;
+    const citizenScans = history.filter(
+      (h) => h.scannerRole === "citizen" || h.scannerRole === "admin"
+    ).length;
+    const anonymousScans = history.filter(
+      (h) => h.scannerRole === "anonymous"
+    ).length;
+
+    const stats = {
+      totalScans,
+      responderScans,
+      citizenScans,
+      anonymousScans,
+      lastScannedAt: history[0]?.createdAt || null,
+    };
+
+    res.status(200).json({
+      success: true,
+      stats,
+      history,
+    });
+  } catch (error) {
+    console.error("GET QR HISTORY ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const clearQRScanHistory = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    await QRScanHistory.deleteMany({ scannedUser: userId });
+    res.status(200).json({
+      success: true,
+      message: "QR scan history cleared successfully.",
+    });
+  } catch (error) {
+    console.error("CLEAR QR HISTORY ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const deleteQRScanHistoryItem = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { id } = req.params;
+
+    const deleted = await QRScanHistory.findOneAndDelete({
+      _id: id,
+      scannedUser: userId,
+    });
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "History entry not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Scan record deleted.",
+    });
+  } catch (error) {
+    console.error("DELETE QR HISTORY ITEM ERROR:", error);
     res.status(500).json({
       success: false,
       message: error.message,

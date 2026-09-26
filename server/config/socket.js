@@ -18,6 +18,13 @@ export const initSocket = (httpServer) => {
       console.log(`🚑 Socket ${socket.id} joined SOS Radar Room`);
     });
 
+    socket.on("join_user_room", (userId) => {
+      if (userId) {
+        socket.join(`user_${userId}`);
+        console.log(`👤 Socket ${socket.id} joined user_${userId}`);
+      }
+    });
+
     socket.on("disconnect", () => {
       console.log(`🔌 Socket Disconnected: ${socket.id}`);
     });

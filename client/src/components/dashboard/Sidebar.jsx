@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   User,
   QrCode,
+  History,
   IdCard,
   Settings,
   LogOut,
@@ -30,6 +31,11 @@ const menuItems = [
     title: "QR Code",
     icon: QrCode,
     path: "/dashboard/qr",
+  },
+  {
+    title: "Scan History",
+    icon: History,
+    path: "/dashboard/qr-history",
   },
   {
     title: "Emergency Card",

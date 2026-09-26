@@ -20,6 +20,7 @@ const VerificationPage = lazy(() => import("../pages/VerificationPage"));
 const AdminVerificationPage = lazy(() => import("../pages/AdminVerificationPage"));
 const ResponderEmergencyPage = lazy(() => import("../pages/ResponderEmergencyPage"));
 const SOSRadarPage = lazy(() => import("../pages/SOSRadarPage"));
+const QRHistoryPage = lazy(() => import("../pages/QRHistoryPage"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-100">
@@ -41,6 +42,7 @@ const AppRoutes = () => {
         <Route path="/dashboard" element={<CitizenDashboard />} />
         <Route path="/dashboard/profile" element={<MedicalProfile />} />
         <Route path="/dashboard/qr" element={<QRPage />} />
+        <Route path="/dashboard/qr-history" element={<QRHistoryPage />} />
         <Route path="/dashboard/card" element={<EmergencyCardPage />} />
         <Route path="/dashboard/settings" element={<SettingsPage />} />
         <Route path="/dashboard/sos-radar" element={<SOSRadarPage />} />

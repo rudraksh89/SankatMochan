@@ -47,8 +47,8 @@ export const getEmergencyCard = async (req, res) => {
         scannerName = req.user.fullName
           ? `${req.user.fullName}${isResp ? " (Verified Responder)" : ""}`
           : isResp
-          ? "Verified Emergency Responder"
-          : "Registered Citizen";
+            ? "Verified Emergency Responder"
+            : "Registered Citizen";
       }
 
       const userAgentStr = req.headers["user-agent"] || "";

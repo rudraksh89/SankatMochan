@@ -8,20 +8,80 @@ import QRScanHistory from "../models/QRScanHistory.js";
 
 const getLocalIpAddress = () => {
   const interfaces = os.networkInterfaces();
+  const candidates = [];
+
   for (const name of Object.keys(interfaces)) {
+    const lowerName = name.toLowerCase();
+
+    // Ignore virtual / loopback / container network interfaces
+    if (
+      lowerName.includes("vethernet") ||
+      lowerName.includes("veth") ||
+      lowerName.includes("wsl") ||
+      lowerName.includes("virtual") ||
+      lowerName.includes("vmware") ||
+      lowerName.includes("hyper-v") ||
+      lowerName.includes("loopback") ||
+      lowerName.includes("tunnel") ||
+      lowerName.includes("tap") ||
+      lowerName.includes("vpn") ||
+      lowerName.includes("default switch") ||
+      lowerName.includes("pseudo")
+    ) {
+      continue;
+    }
+
     for (const iface of interfaces[name]) {
       if (iface.family === "IPv4" && !iface.internal) {
+        const ip = iface.address;
+        if (ip.startsWith("169.254.")) continue; // Ignore APIPA link-local
+
+        let score = 1;
+        if (
+          lowerName.includes("wi-fi") ||
+          lowerName.includes("wifi") ||
+          lowerName.includes("ethernet") ||
+          lowerName.includes("wlan") ||
+          lowerName.includes("eth") ||
+          lowerName.includes("en0")
+        ) {
+          score += 10;
+        }
+
+        if (ip.startsWith("192.168.") || ip.startsWith("172.")) {
+          score += 5;
+        } else if (ip.startsWith("10.")) {
+          score += 5;
+        }
+
+        candidates.push({ ip, score, name });
+      }
+    }
+  }
+
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => b.score - a.score);
+    return candidates[0].ip;
+  }
+
+  // Fallback: return first non-internal IPv4 if filtering excluded all
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === "IPv4" && !iface.internal && !iface.address.startsWith("169.254.")) {
         return iface.address;
       }
     }
   }
+
   return null;
 };
 
 export const generateQRCode = async (req, res) => {
   try {
-    // Prioritize active request Origin header for multi-device/LAN compatibility
-    let clientUrl = req.headers.origin || process.env.CLIENT_URL || process.env.FRONTEND_URL;
+    // Check if an explicit public domain or tunnel URL is set in environment
+    const envClientUrl = process.env.PUBLIC_URL || process.env.CLIENT_URL || process.env.FRONTEND_URL;
+    let clientUrl = envClientUrl || req.headers.origin;
+
     if (!clientUrl && req.headers.host) {
       const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
       const hostWithoutPort = req.headers.host.split(":")[0];
@@ -32,7 +92,8 @@ export const generateQRCode = async (req, res) => {
     }
     clientUrl = clientUrl.replace(/\/$/, "");
 
-    // If clientUrl uses localhost/127.0.0.1, replace with machine's LAN IP so phone scans work over local Wi-Fi
+    // Replace localhost/127.0.0.1 with LAN IP for local Wi-Fi testing.
+    // If clientUrl is a public URL (e.g. ngrok, localtunnel, Vercel), keep it intact!
     if (clientUrl.includes("localhost") || clientUrl.includes("127.0.0.1")) {
       const lanIp = getLocalIpAddress();
       if (lanIp) {

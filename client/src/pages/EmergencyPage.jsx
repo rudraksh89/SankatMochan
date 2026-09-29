@@ -23,7 +23,13 @@ const EmergencyPage = () => {
   const [sosStatus, setSosStatus] = useState("");
 
   useEffect(() => {
-    fetchCard();
+    // Parse offline QR payload synchronously on mount for instant rendering
+    const offlineCard = parseOfflinePayload();
+    if (offlineCard) {
+      setCard(offlineCard);
+      setLoading(false);
+    }
+    fetchCard(null, !!offlineCard);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
@@ -195,9 +201,11 @@ const EmergencyPage = () => {
     return null;
   };
 
-  const fetchCard = async (token = null) => {
+  const fetchCard = async (token = null, isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) {
+        setLoading(true);
+      }
       setError("");
 
       const config = {};
@@ -211,15 +219,16 @@ const EmergencyPage = () => {
       setCard(res.data.emergencyCard);
     } catch (err) {
       console.error("Emergency card fetch error:", err);
-      const offlineCard = parseOfflinePayload();
-      if (offlineCard) {
-        setCard(offlineCard);
-      } else {
+      setCard((prevCard) => {
+        if (prevCard) return prevCard;
+        const offlineCard = parseOfflinePayload();
+        if (offlineCard) return offlineCard;
         setError(
           err.response?.data?.message ||
-            "Unable to load emergency card (No network & no offline payload)"
+          "Unable to load emergency card (No network & no offline payload)"
         );
-      }
+        return null;
+      });
     } finally {
       setLoading(false);
     }
@@ -273,7 +282,7 @@ const EmergencyPage = () => {
 
       setLoginError(
         err.response?.data?.message ||
-          "Login failed. Please try again."
+        "Login failed. Please try again."
       );
     } finally {
       setLoginLoading(false);
@@ -347,8 +356,8 @@ const EmergencyPage = () => {
     const insurance = Array.isArray(card.insurance)
       ? card.insurance
       : card.insurance
-      ? [card.insurance]
-      : [];
+        ? [card.insurance]
+        : [];
 
     // -------------------------------------------------
     // Documents
@@ -447,12 +456,12 @@ const EmergencyPage = () => {
                 value={
                   mp.dateOfBirth
                     ? new Date(
-                        mp.dateOfBirth
-                      ).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })
+                      mp.dateOfBirth
+                    ).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })
                     : null
                 }
                 icon="📅"
@@ -665,15 +674,15 @@ const EmergencyPage = () => {
                         value={
                           item.validTill
                             ? new Date(
-                                item.validTill
-                              ).toLocaleDateString(
-                                "en-IN",
-                                {
-                                  day: "numeric",
-                                  month: "long",
-                                  year: "numeric",
-                                }
-                              )
+                              item.validTill
+                            ).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              }
+                            )
                             : null
                         }
                         icon="📅"

@@ -73,6 +73,10 @@ export const getEmergencyCard = async (req, res) => {
         deviceType,
       });
 
+      console.log(`\n==================================================`);
+      console.log(`📱 [QR SCAN RECORDED] Patient: ${userId} | By: ${scannerName} (${scannerRole})`);
+      console.log(`==================================================\n`);
+
       const io = getIO();
       if (io) {
         io.to(`user_${userId}`).emit("qr_scanned", scanEntry);

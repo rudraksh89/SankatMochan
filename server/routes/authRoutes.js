@@ -7,6 +7,7 @@ import {
   login,
   getMe,
   updateAccount,
+  sendPasswordChangeOtp,
   changePassword,
   deleteAccount,
   forgotPassword,
@@ -26,6 +27,7 @@ router.post("/reset-password", resetPassword);
 
 router.get("/me", protect, getMe);
 router.put("/update", protect, updateAccount);
+router.post("/send-password-change-otp", protect, sendPasswordChangeOtp);
 router.put("/change-password", protect, changePassword);
 router.delete("/delete-account", protect, deleteAccount);
 

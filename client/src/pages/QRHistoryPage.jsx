@@ -91,6 +91,11 @@ const QRHistoryPage = () => {
   useEffect(() => {
     fetchHistory();
 
+    // Periodic 5-second auto-poll fallback
+    const pollInterval = setInterval(() => {
+      fetchHistory(false);
+    }, 5000);
+
     // Setup Socket listener for instant scan notification
     if (user?._id) {
       const socketUrl = getSocketURL();
@@ -134,9 +139,14 @@ const QRHistoryPage = () => {
       });
 
       return () => {
+        clearInterval(pollInterval);
         socket.disconnect();
       };
     }
+
+    return () => {
+      clearInterval(pollInterval);
+    };
   }, [user?._id]);
 
   const handleClearHistory = async () => {

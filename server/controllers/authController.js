@@ -416,24 +416,90 @@ export const updateAccount = async (req, res) => {
 };
 
 
-// ================= CHANGE PASSWORD =================
+// ================= SEND PASSWORD CHANGE OTP =================
+
+export const sendPasswordChangeOtp = async (req, res) => {
+  try {
+    const user = req.user || (await User.findById(req.user?._id || req.user?.id));
+
+    if (!user || !user.email) {
+      return res.status(404).json({
+        success: false,
+        message: "User account or email address not found",
+      });
+    }
+
+    const { newPassword, confirmPassword } = req.body || {};
+
+    if (newPassword && confirmPassword) {
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "New passwords do not match",
+        });
+      }
+      if (newPassword.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must be at least 6 characters",
+        });
+      }
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store OTP in Otp collection (keyed by user's email)
+    const userEmail = user.email.toLowerCase().trim();
+    await Otp.deleteMany({ email: userEmail });
+    await Otp.create({
+      email: userEmail,
+      otp,
+    });
+
+    console.log(`\n==================================================`);
+    console.log(`🔑 [SANKAT MOCHAN] PASSWORD CHANGE OTP FOR ${userEmail}: ${otp}`);
+    console.log(`==================================================\n`);
+
+    // Send email safely
+    let emailResult = { devFallback: true };
+    try {
+      emailResult = await sendEmail({
+        to: userEmail,
+        subject: "Sankat Mochan - Password Change Verification OTP",
+        html: getOtpHtmlTemplate(otp, "Password Change Verification"),
+        text: `Your Sankat Mochan password change verification OTP is ${otp}. It will expire in 15 minutes.`,
+      });
+    } catch (emailErr) {
+      console.error("[SMTP DELIVERY WARN]", emailErr.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: emailResult?.devFallback
+        ? "Verification OTP generated! (SMTP pending - OTP printed to server terminal)"
+        : "Verification OTP sent to your registered email",
+    });
+  } catch (error) {
+    console.error("SEND PASSWORD CHANGE OTP ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to send OTP code",
+    });
+  }
+};
+
+
+// ================= CHANGE PASSWORD (OTP-verified) =================
 
 export const changePassword = async (req, res) => {
   try {
-    const {
-      currentPassword,
-      newPassword,
-      confirmPassword,
-    } = req.body;
+    const { newPassword, confirmPassword, otp } = req.body;
 
-    if (
-      !currentPassword ||
-      !newPassword ||
-      !confirmPassword
-    ) {
+    if (!newPassword || !confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: "All password fields are required",
+        message: "New password and confirm password are required",
       });
     }
 
@@ -447,8 +513,14 @@ export const changePassword = async (req, res) => {
     if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
-        message:
-          "Password must be at least 6 characters",
+        message: "Password must be at least 6 characters",
+      });
+    }
+
+    if (!otp || otp.trim().length !== 6) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid 6-digit OTP code is required",
       });
     }
 
@@ -461,28 +533,29 @@ export const changePassword = async (req, res) => {
       });
     }
 
-    const isMatch = await bcrypt.compare(
-      currentPassword,
-      user.password
-    );
+    // Verify OTP from the Otp collection
+    const validOtp = await Otp.findOne({
+      email: user.email.toLowerCase(),
+      otp: otp.trim(),
+    });
 
-    if (!isMatch) {
+    if (!validOtp) {
       return res.status(400).json({
         success: false,
-        message: "Current password is incorrect",
+        message: "Invalid or expired OTP code. Please request a new OTP.",
       });
     }
 
-    user.password = await bcrypt.hash(
-      newPassword,
-      10
-    );
-
+    // OTP valid — update password
+    user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
+
+    // Clean up used OTP
+    await Otp.deleteMany({ email: user.email.toLowerCase() });
 
     res.status(200).json({
       success: true,
-      message: "Password changed successfully",
+      message: "Password changed successfully!",
     });
   } catch (error) {
     console.error("CHANGE PASSWORD ERROR:", error);
@@ -499,7 +572,8 @@ export const changePassword = async (req, res) => {
 
 export const deleteAccount = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const userId = req.user._id;
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({
@@ -508,11 +582,29 @@ export const deleteAccount = async (req, res) => {
       });
     }
 
-    await User.findByIdAndDelete(req.user._id);
+    // Import related models dynamically to avoid circular deps
+    const { default: MedicalProfile } = await import("../models/MedicalProfile.js");
+    const { default: EmergencyContact } = await import("../models/EmergencyContact.js");
+    const { default: Insurance } = await import("../models/Insurance.js");
+    const { default: QRScanHistory } = await import("../models/QRScanHistory.js");
+    const { default: PatientDocument } = await import("../models/PatientDocument.js");
+
+    // Purge all user data across collections
+    await Promise.all([
+      User.findByIdAndDelete(userId),
+      MedicalProfile.deleteMany({ userId }),
+      EmergencyContact.deleteMany({ userId }),
+      Insurance.deleteMany({ userId }),
+      QRScanHistory.deleteMany({ userId }),
+      PatientDocument.deleteMany({ userId }),
+      Otp.deleteMany({ email: user.email.toLowerCase() }),
+    ]);
+
+    console.log(`🗑️ [SANKAT MOCHAN] Account permanently deleted: ${user.email}`);
 
     res.status(200).json({
       success: true,
-      message: "Account deleted successfully",
+      message: "Account and all associated data permanently deleted",
     });
   } catch (error) {
     console.error("DELETE ACCOUNT ERROR:", error);
@@ -635,3 +727,4 @@ export const resetPassword = async (req, res) => {
     });
   }
 };
+

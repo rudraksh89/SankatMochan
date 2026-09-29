@@ -156,7 +156,10 @@ export const getQRScanHistory = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const history = await QRScanHistory.find({ scannedUser: userId })
+    const history = await QRScanHistory.find({
+      $or: [{ scannedUser: userId }, { scannedBy: userId }],
+    })
+      .populate("scannedUser", "fullName email phone accountType")
       .populate("scannedBy", "fullName email phone accountType isVerified profession organization")
       .sort({ createdAt: -1 })
       .limit(200);

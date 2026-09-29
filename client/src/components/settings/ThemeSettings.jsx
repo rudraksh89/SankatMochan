@@ -23,11 +23,10 @@ const ThemeSettings = () => {
         <button
           type="button"
           onClick={() => selectTheme("light")}
-          className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
-            theme === "light"
+          className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${theme === "light"
               ? "border-blue-500 bg-blue-50 dark:bg-slate-800"
               : "border-gray-200 dark:border-slate-700"
-          }`}
+            }`}
         >
           <div className="flex items-center gap-4">
 
@@ -48,11 +47,10 @@ const ThemeSettings = () => {
           </div>
 
           <div
-            className={`w-5 h-5 rounded-full border-2 ${
-              theme === "light"
+            className={`w-5 h-5 rounded-full border-2 ${theme === "light"
                 ? "border-blue-600 bg-blue-600"
                 : "border-gray-400"
-            }`}
+              }`}
           />
 
         </button>
@@ -63,11 +61,10 @@ const ThemeSettings = () => {
         <button
           type="button"
           onClick={() => selectTheme("dark")}
-          className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
-            theme === "dark"
+          className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${theme === "dark"
               ? "border-blue-500 bg-blue-50 dark:bg-slate-800"
               : "border-gray-200 dark:border-slate-700"
-          }`}
+            }`}
         >
 
           <div className="flex items-center gap-4">
@@ -89,11 +86,10 @@ const ThemeSettings = () => {
           </div>
 
           <div
-            className={`w-5 h-5 rounded-full border-2 ${
-              theme === "dark"
+            className={`w-5 h-5 rounded-full border-2 ${theme === "dark"
                 ? "border-blue-600 bg-blue-600"
                 : "border-gray-400"
-            }`}
+              }`}
           />
 
         </button>
@@ -104,11 +100,10 @@ const ThemeSettings = () => {
         <button
           type="button"
           onClick={() => selectTheme("system")}
-          className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${
-            theme === "system"
+          className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${theme === "system"
               ? "border-blue-500 bg-blue-50 dark:bg-slate-800"
               : "border-gray-200 dark:border-slate-700"
-          }`}
+            }`}
         >
 
           <div className="flex items-center gap-4">
@@ -130,11 +125,10 @@ const ThemeSettings = () => {
           </div>
 
           <div
-            className={`w-5 h-5 rounded-full border-2 ${
-              theme === "system"
+            className={`w-5 h-5 rounded-full border-2 ${theme === "system"
                 ? "border-blue-600 bg-blue-600"
                 : "border-gray-400"
-            }`}
+              }`}
           />
 
         </button>
